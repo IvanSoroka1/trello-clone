@@ -5,8 +5,8 @@ import * as React from 'react'
 
 
 function App() {
-  const [ username, setUsername ] = useState('');
-  const [ password, setPassword ] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,12 +28,12 @@ function App() {
         >
         </input>
 
-        <p 
-        className="mt-6"
+        <p
+          className="mt-6"
         > Password </p>
         <input className="border rounded bg-white"
-        value={password}
-        onChange={(e) => { setPassword(e.target.value) }} 
+          value={password}
+          onChange={(e) => { setPassword(e.target.value) }}
         >
         </input>
 
