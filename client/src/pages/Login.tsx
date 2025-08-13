@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import  NameAndInput  from "../components/NameAndInput";
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -17,18 +18,22 @@ function Login() {
                 },
                 body: JSON.stringify({
                     email: email,
-                    password: password
-                })
+                    password: password,
+                }),
+                credentials:"include"
             })
 
             if (!response.ok) {
                 console.log("Login Failed: ");
             }
-            else
+            else{
+                const data = await response.json();
                 console.log("Login successful: ");
+                localStorage.setItem("token", data);
+                navigate("/dashboard");
+            }
 
-            const data = await response.json();
-            console.log(data);
+            
 
         }
         catch (err) {

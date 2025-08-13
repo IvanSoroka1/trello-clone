@@ -32,11 +32,26 @@ public class AuthController : ControllerBase
     {
         var user = _context.Users.FirstOrDefault(u => u.Email == request.Email);
 
+
         if (user != null && user.PasswordHash == request.Password)
         {
             var token = GenerateJwtToken(user.Email);
-            return Ok(new { token });
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false, // only over HTTPS
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddHours(1),
+                //Path = "/"
+            };
+
+            Response.Cookies.Append("jwt", token, cookieOptions);
+
+            return Ok(new { message = "Login Successful" });
         }
+
+        
 
         return Unauthorized(new { message = "Invalid credentials" });
     }
@@ -183,7 +198,7 @@ public class AuthController : ControllerBase
             Console.WriteLine($"Token validation failed: {ex.Message}");
             return null;
         }
-}
+    }
 
 
 }

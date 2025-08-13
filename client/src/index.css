@@ -45,10 +45,19 @@ button {
   background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
-}
+}*/
+
+
 button:hover {
-  border-color: #646cff;
+  /*@apply hover:bg-gray-100 transition-colors duration-200; According to chatgpt, the bottom is equivalent to this...*/ 
+  background-color: rgb(243 244 246);
 }
+button {
+  transition: background-color 0.2s ease-in-out;
+}
+
+
+/*
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -66,3 +75,4 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
+

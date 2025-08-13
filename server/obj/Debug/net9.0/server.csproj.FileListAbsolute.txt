@@ -135,3 +135,6 @@
 /Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/Microsoft.IdentityModel.Logging.dll
 /Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/Microsoft.IdentityModel.Tokens.dll
 /Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/System.IdentityModel.Tokens.Jwt.dll
+/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/Microsoft.IdentityModel.Protocols.dll
+/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll

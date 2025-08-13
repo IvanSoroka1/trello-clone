@@ -8,7 +8,7 @@ namespace server.Models
 
         [Key]
         public string Email { get; set; }
-        public List<TodoTask> Tasks { get; set; }
+        public List<Board> Boards { get; set; } = new List<Board>();
 
         public bool Verified { get; set; }
     }
