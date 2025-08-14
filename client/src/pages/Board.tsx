@@ -12,7 +12,7 @@ interface Board {
 }
 
 interface TaskList {
-    id: string;
+    id: number;
     name: string;
     tasks: Task[];
 }
@@ -20,16 +20,18 @@ interface TaskList {
 interface Task {
     id: number;
     name: string;
-    description: string;
+    completed: boolean;
 }
 
 export default function Board() {
 
-    const [tasks, setTasks] = useState<Task[]>([]);
+    const [taskLists, setTaskLists] = useState<TaskList[]>([]);
 
     const { id } = useParams();
     const navigate = useNavigate();
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+    const [enterTaskListId, setEnterTaskListId] = useState<number | null>(null);
+
     useEffect(() => {
         const handleClick = (e: MouseEvent) => {
             setOpenMenuId(null);
@@ -38,14 +40,8 @@ export default function Board() {
             document.addEventListener("click", handleClick);
         }
         try {
-            fetch("http://localhost:5235/api/tasks/tasklists", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    BoardId: id
-                }),
+            fetch(`http://localhost:5235/api/tasks/tasklists/${id}`, {
+                method: "GET",
                 credentials: "include"
 
             }).then(async (response) => {
@@ -54,7 +50,7 @@ export default function Board() {
                     return;
                 }
                 const data = await response.json();
-                setTasks(data.message);
+                setTaskLists(data.message);
                 console.log("Success! Board data:", data);
             })
         } catch (e) {
@@ -65,8 +61,8 @@ export default function Board() {
         }
     }, [openMenuId]);
 
-    const newTaskList = async () => {
 
+    const newTaskList = async () => {
         try {
             const response = await fetch("http://localhost:5235/api/tasks/maketasklist", {
                 method: "POST",
@@ -82,8 +78,8 @@ export default function Board() {
             const data = await response.json();
             if (!response.ok)
                 throw (data.message);
-            else{
-                setTasks(prevTasks => [...prevTasks, data.message]);
+            else {
+                setTaskLists(prevTaskLists => [...prevTaskLists, data.message]);
                 setCreateListPrompt(false);
                 setListName(''); // Clear the input field after creating a new task list
             }
@@ -113,7 +109,44 @@ export default function Board() {
             if (!response.ok)
                 throw (data.message);
             else
-                setTasks(prevTasks => prevTasks.filter(task => task.id !== openMenuId));
+                setTaskLists(prevTaskLists => prevTaskLists.filter(task => task.id !== openMenuId));
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    const newTask = async () => {
+        try {
+            if (enterTaskListId === null) return; // No task list is selected
+
+            const response = await fetch("http://localhost:5235/api/tasks/newtask", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    TaskName: taskName,
+                    ListId: enterTaskListId,
+                    BoardId: id
+                }),
+                credentials: "include"
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw (data.message);
+            else{
+                setTaskLists(prevTaskLists => prevTaskLists.map(taskList => {
+                    if (taskList.id === enterTaskListId) {
+                        return {
+                            ...taskList,
+                            tasks: [...taskList.tasks, data.message]
+                        }
+                    }
+                    return taskList;
+                }));
+                setEnterTaskListId(null);
+                setTaskName('');
+            }
+                
         } catch (e) {
             console.log(e);
         }
@@ -121,6 +154,8 @@ export default function Board() {
 
     const [createListPrompt, setCreateListPrompt] = useState(false);
     const [listName, setListName] = useState('');
+    const [taskName, setTaskName] = useState('');
+    const [listHeight, setListHeight] = useState(20);
 
     return (
         <div>
@@ -128,19 +163,19 @@ export default function Board() {
                 Board Name
             </div>
             {/* Fix the scrollbar to be at the bottom of the screen */}
-            <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 h-screen ">
+            <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 items-start">
                 {
-                    tasks.map(task => (
-                        <div className="relative border rounded w-60 h-20 flex-none">
+                    taskLists.map(taskList => (
+                        <div className={`relative border rounded w-60  flex-none p-2`}>
 
-                            <div onClick={e => { e.stopPropagation(); setOpenMenuId(task.id) }} className="rounded absolute top-1 right-2 w-8 h-8 flex justify-center items-center">
+                            <div onClick={e => { e.stopPropagation(); setOpenMenuId(taskList.id) }} className="rounded absolute top-0 right-0 w-8 h-8 flex justify-center items-center">
                                 <FiMoreHorizontal size={16} />
 
-                                {openMenuId === task.id &&
+                                {openMenuId === taskList.id &&
                                     <div className="border rounded text-white-500 w-70 bg-white absolute left-0 top-full z-50  "
                                         onClick={e => e.stopPropagation()}
                                     >
-                                        <div className="py-2 font-semibold">
+                                        <div className="flex justify-center py-2 font-semibold">
                                             List Actions
                                         </div>
                                         <button onClick={deleteTaskList} className="rounded px-2 text-red-500 flex justify-left w-full">
@@ -151,30 +186,46 @@ export default function Board() {
                             </div>
 
 
-                            <div className="mt-1 ml-2 font-semibold">
-                                {task.name}
+                            <div className=" font-semibold">
+                                {taskList.name}
                             </div>
-                            <button className="rounded absolute bottom-2 left-2">
-                                + Add a new task
-                            </button>
+                            {taskList.tasks && taskList.tasks.map((task) => (
+                                <div>{task.name}</div>
+                            ))}
+
+                            {enterTaskListId !== taskList.id &&
+                                //<button onClick={() => { setEnterTaskListId(taskList.id); setListHeight(prevHeight => prevHeight + 20); }} className="rounded absolute bottom-2 left-2">
+                                <button onClick={() => { setEnterTaskListId(taskList.id); setListHeight(prevHeight => prevHeight + 20); }} className="rounded">
+                                    + Add a new task
+                                </button>
+                            }
+                            {enterTaskListId === taskList.id &&
+                                <div className="mt-2">
+                                        <NameAndInputPreview type="task" name="Enter Task Name..." value={taskName} setter={setTaskName} />
+                                    <div className="flex gap-2 mt-2">
+                                        <button onClick={newTask} className= "border rounded p-2">Add Task +</button>
+                                        <button className = "rounded" onClick={() => { setEnterTaskListId(null); setTaskName(""); }}><X></X></button>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     ))
                 }
 
                 {
                     !createListPrompt &&
-                    <button onClick={() => setCreateListPrompt(true)} className="py-2 justify-center items-center border rounded w-60 h-20 flex-none">+ Create a new list</button>
+                    <button onClick={() => setCreateListPrompt(true)} className="py-2 justify-center items-center border rounded w-60 flex-none">+ Create a new list</button>
                 }
                 {
                     createListPrompt &&
-                    <div className="relative border rounded w-60 h-20 flex-none">
+                    <div className="relative border rounded w-60 flex-none p-2">
 
-                        <div className="mt-2 flex justify-center">
+                        <div className="flex justify-center">
                             <NameAndInputPreview type="name" name="Enter List Name..." value={listName} setter={setListName} ></NameAndInputPreview>
                         </div>
-                        <div className="flex absolute bottom-2 left-2 gap-2">
-                            <button onClick={newTaskList} className=" border rounded px-2">Create +</button>
-                            <button onClick={() => { setCreateListPrompt(false) }}><X></X></button>
+                        <div className="flex gap-2 mt-2">
+                            <button onClick={newTaskList} className=" border rounded p-2">Add List +</button>
+                            <button onClick={() => { setCreateListPrompt(false); setListName(""); }}><X></X></button>
                         </div>
                     </div>
                 }
@@ -183,5 +234,10 @@ export default function Board() {
             </div>
         </div>
     )
+
+}
+
+
+function ToggleCheckIcon(){
 
 }

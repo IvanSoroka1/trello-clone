@@ -55,17 +55,17 @@ public class TasksController : ControllerBase
         board = possibleBoard;
         return "Success!";
     }
-    [HttpPost("TaskLists")]
-    public IActionResult GetTaskLists([FromBody] TaskListsRequest request)
+    [HttpGet("TaskLists/{boardId}")]
+    public IActionResult GetTaskLists(int boardId)
     {
 
         IQueryable<Board>? board = null;
-        string? message = checkValidBoard(request.BoardId, ref board);
+        string? message = checkValidBoard(boardId, ref board);
 
         if (board == null)
             return BadRequest(new { message = message });
 
-        var taskLists = board.SelectMany(b => b.TaskLists).ToList();
+        var taskLists = board.Include(b => b.TaskLists).ThenInclude(tl => tl.Tasks).SelectMany(b => b.TaskLists).ToList();
 
         return Ok(new { message = taskLists });
     }
@@ -98,7 +98,7 @@ public class TasksController : ControllerBase
 
     }
 
-    [HttpDelete ("deletetasklist")]
+    [HttpDelete("deletetasklist")]
     public IActionResult DeleteTaskList([FromBody] DeleteTaskListReq request)
     {
         IQueryable<Board>? boardQuery = null;
@@ -119,6 +119,34 @@ public class TasksController : ControllerBase
 
         return Ok(new { message = "Task list deleted successfully" });
     }
+
+    [HttpPost("newtask")]
+    public IActionResult NewTask([FromBody] NewTaskRequest request)
+    {
+        IQueryable<Board>? boardQuery = null;
+        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+
+        if (boardQuery == null)
+            return BadRequest(new { message = message });
+
+        Board board = boardQuery.FirstOrDefault();
+
+        var taskList = board.TaskLists.FirstOrDefault(tl => tl.Id == request.ListId);
+
+        if (taskList == null)
+            return NotFound(new { message = "Task list not found" });
+
+        var task = new server.Models.Task
+        {
+            Name = request.TaskName,
+            Completed = false,
+        };
+
+        taskList.Tasks.Add(task);
+        _context.SaveChanges();
+
+        return Ok(new { message = task });
+    }
 }
 
 public class TaskListsRequest
@@ -134,6 +162,13 @@ public class MakeTaskListRequest
 
 public class DeleteTaskListReq
 {
+    public int BoardId { get; set; }
+    public int ListId { get; set; }
+}
+
+public class NewTaskRequest
+{
+    public string TaskName { get; set; }
     public int BoardId { get; set; }
     public int ListId { get; set; }
 }
