@@ -2,6 +2,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
 using server.Data;
 using server.Models;
@@ -24,9 +25,9 @@ public class TasksController : ControllerBase
         var email = User.FindFirst(ClaimTypes.Email)?.Value;
 
         if (email == null)
-             return "Email not found";
+            return "Email not found";
 
-        var possibleBoard = _context.Boards.Where(u => u.Id == BoardId);
+        var possibleBoard = _context.Boards.Include(b => b.TaskLists).Where(u => u.Id == BoardId); // Is this Include always necessary?
 
         if (possibleBoard == null)
             return "No board with such an ID exists";
@@ -93,8 +94,30 @@ public class TasksController : ControllerBase
 
         _context.SaveChanges();
 
-        return Ok(new { message = "Added new board!" });
+        return Ok(new { message = taskList });
 
+    }
+
+    [HttpDelete ("deletetasklist")]
+    public IActionResult DeleteTaskList([FromBody] DeleteTaskListReq request)
+    {
+        IQueryable<Board>? boardQuery = null;
+        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+
+        if (boardQuery == null)
+            return BadRequest(new { message = message });
+
+        Board board = boardQuery.FirstOrDefault();
+
+        var taskList = board.TaskLists.FirstOrDefault(tl => tl.Id == request.ListId);
+
+        if (taskList == null)
+            return NotFound(new { message = "Task list not found" });
+
+        board.TaskLists.Remove(taskList);
+        _context.SaveChanges();
+
+        return Ok(new { message = "Task list deleted successfully" });
     }
 }
 
@@ -107,4 +130,10 @@ public class MakeTaskListRequest
 {
     public string TaskListName { get; set; }
     public int BoardId { get; set; }
+}
+
+public class DeleteTaskListReq
+{
+    public int BoardId { get; set; }
+    public int ListId { get; set; }
 }

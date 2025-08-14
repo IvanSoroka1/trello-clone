@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import NameAndInput, { NameAndInputPreview } from "../components/NameAndInput";
 import { X } from "lucide-react";
+import { FiMoreHorizontal } from "react-icons/fi";
 
 
 interface Board {
@@ -17,7 +18,7 @@ interface TaskList {
 }
 
 interface Task {
-    id: string;
+    id: number;
     name: string;
     description: string;
 }
@@ -28,7 +29,14 @@ export default function Board() {
 
     const { id } = useParams();
     const navigate = useNavigate();
+    const [openMenuId, setOpenMenuId] = useState<number | null>(null);
     useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            setOpenMenuId(null);
+        };
+        if (openMenuId !== null) {
+            document.addEventListener("click", handleClick);
+        }
         try {
             fetch("http://localhost:5235/api/tasks/tasklists", {
                 method: "POST",
@@ -52,7 +60,10 @@ export default function Board() {
         } catch (e) {
             console.log(e);
         }
-    }, []);
+        finally {
+            return () => { document.removeEventListener("click", handleClick); };
+        }
+    }, [openMenuId]);
 
     const newTaskList = async () => {
 
@@ -71,8 +82,38 @@ export default function Board() {
             const data = await response.json();
             if (!response.ok)
                 throw (data.message);
+            else{
+                setTasks(prevTasks => [...prevTasks, data.message]);
+                setCreateListPrompt(false);
+                setListName(''); // Clear the input field after creating a new task list
+            }
 
 
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    const deleteTaskList = async () => {
+        try {
+            if (openMenuId === null) return; // No task list is selected
+
+            const response = await fetch("http://localhost:5235/api/tasks/deletetasklist", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    ListId: openMenuId,
+                    BoardId: id
+                }),
+                credentials: "include"
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw (data.message);
+            else
+                setTasks(prevTasks => prevTasks.filter(task => task.id !== openMenuId));
         } catch (e) {
             console.log(e);
         }
@@ -86,25 +127,47 @@ export default function Board() {
             <div className="flex justify-center items-center p-2 border-b">
                 Board Name
             </div>
-            <div className="flex gap-2 max-w-7xl mx-auto mt-2">
+            {/* Fix the scrollbar to be at the bottom of the screen */}
+            <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 h-screen ">
                 {
                     tasks.map(task => (
-                        <div className="relative border rounded w-60 h-20">
-                            <div className="mt-1 ml-2 font-medium">
+                        <div className="relative border rounded w-60 h-20 flex-none">
+
+                            <div onClick={e => { e.stopPropagation(); setOpenMenuId(task.id) }} className="rounded absolute top-1 right-2 w-8 h-8 flex justify-center items-center">
+                                <FiMoreHorizontal size={16} />
+
+                                {openMenuId === task.id &&
+                                    <div className="border rounded text-white-500 w-70 bg-white absolute left-0 top-full z-50  "
+                                        onClick={e => e.stopPropagation()}
+                                    >
+                                        <div className="py-2 font-semibold">
+                                            List Actions
+                                        </div>
+                                        <button onClick={deleteTaskList} className="rounded px-2 text-red-500 flex justify-left w-full">
+                                            Delete
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+
+
+                            <div className="mt-1 ml-2 font-semibold">
                                 {task.name}
                             </div>
-                            + Add a new task
+                            <button className="rounded absolute bottom-2 left-2">
+                                + Add a new task
+                            </button>
                         </div>
                     ))
                 }
 
                 {
                     !createListPrompt &&
-                    <button onClick={() => setCreateListPrompt(true)} className="py-2 justify-center items-center border rounded w-60">+ Create a new list</button>
+                    <button onClick={() => setCreateListPrompt(true)} className="py-2 justify-center items-center border rounded w-60 h-20 flex-none">+ Create a new list</button>
                 }
                 {
                     createListPrompt &&
-                    <div className="relative border rounded w-60 h-20">
+                    <div className="relative border rounded w-60 h-20 flex-none">
 
                         <div className="mt-2 flex justify-center">
                             <NameAndInputPreview type="name" name="Enter List Name..." value={listName} setter={setListName} ></NameAndInputPreview>

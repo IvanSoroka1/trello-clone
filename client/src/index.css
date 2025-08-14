@@ -50,12 +50,21 @@ button {
 
 button:hover {
   /*@apply hover:bg-gray-100 transition-colors duration-200; According to chatgpt, the bottom is equivalent to this...*/ 
-  background-color: rgb(243 244 246);
+  background-color: rgb(223, 226, 233)
 }
 button {
   transition: background-color 0.2s ease-in-out;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge, and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
 
 /*
 button:focus,

@@ -29,7 +29,6 @@ function Login() {
             else{
                 const data = await response.json();
                 console.log("Login successful: ");
-                localStorage.setItem("token", data);
                 navigate("/dashboard");
             }
 
