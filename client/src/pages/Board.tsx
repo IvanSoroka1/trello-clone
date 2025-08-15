@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import NameAndInput, { NameAndInputPreview } from "../components/NameAndInput";
-import { X } from "lucide-react";
+import { List, X } from "lucide-react";
 import { FiMoreHorizontal } from "react-icons/fi";
+import { FaCheckCircle, FaRegCircle, FaEdit, FaCheck, FaRegTrashAlt } from "react-icons/fa";
 
 
 interface Board {
@@ -133,7 +134,7 @@ export default function Board() {
             const data = await response.json();
             if (!response.ok)
                 throw (data.message);
-            else{
+            else {
                 setTaskLists(prevTaskLists => prevTaskLists.map(taskList => {
                     if (taskList.id === enterTaskListId) {
                         return {
@@ -146,7 +147,82 @@ export default function Board() {
                 setEnterTaskListId(null);
                 setTaskName('');
             }
-                
+
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    const editTaskName = async (taskListId: number) => {
+        try {
+            if (editTaskId === null) return; // No task list is selected
+
+            const response = await fetch("http://localhost:5235/api/tasks/edittask", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    TaskId: editTaskId,
+                    TaskName: taskName,
+                    ListId: taskListId,
+                    BoardId: id
+                }),
+                credentials: "include"
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw (data.message);
+            else {
+                setTaskLists(prevTaskLists => prevTaskLists.map(taskList => {
+                    if (taskList.id === taskListId) {
+                        return {
+                            ...taskList,
+                            tasks: taskList.tasks.map(task => {
+                                if (task.id === editTaskId) {
+                                    return { ...task, name: taskName };
+                                }
+                                return task;
+                            })
+                        }
+                    }
+                    return taskList;
+                }));
+                setEditTaskId(null);
+                setTaskName('');
+            }
+
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    const deleteTask = async (taskId: number, taskListId: number) => {
+        try {
+            const response = await fetch("http://localhost:5235/api/tasks/deletetask", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    TaskId: taskId,
+                    ListId: taskListId,
+                    BoardId: id
+                }),
+                credentials: "include"
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw (data.message);
+            else {
+                setTaskLists(prevTaskLists => prevTaskLists.map(taskList => {
+                    if (taskList.id !== taskListId)
+                         return taskList;
+                    return {
+                        ...taskList,
+                        tasks: taskList.tasks.filter(task => task.id !== taskId)
+                    }
+                }));
+            }
+
         } catch (e) {
             console.log(e);
         }
@@ -156,6 +232,7 @@ export default function Board() {
     const [listName, setListName] = useState('');
     const [taskName, setTaskName] = useState('');
     const [listHeight, setListHeight] = useState(20);
+    const [editTaskId, setEditTaskId] = useState<number | null>(null);
 
     return (
         <div>
@@ -190,7 +267,35 @@ export default function Board() {
                                 {taskList.name}
                             </div>
                             {taskList.tasks && taskList.tasks.map((task) => (
-                                 <div className = "flex items-center gap-1 rounded shadow bg-white p-2 hover:border-blue-500"><ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>{' '}{task.name}</div>
+                                <div>
+                                    {editTaskId === task.id ? (
+                                        <div>
+
+                                            <div className="fixed z-10 top-0 left-0 w-screen h-screen bg-black opacity-50"> </div>
+                                            <div className="relative z-50">
+                                               
+                                                <input type="text" value={taskName} onChange={e => setTaskName(e.target.value)} className="rounded p-1 bg-white shadow-lg" />
+
+                                                <div className="flex gap-2 items-center">
+                                                    <FaCheck onClick={() => editTaskName(taskList.id)} className="text-green-500" /><X className="text-red-500" onClick={() => { setEditTaskId(null) }} />
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    ) : (
+                                        <div className="relative flex items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500">
+                                            <ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>
+                                            {task.name}
+                                            <div className="flex text-gray-500 absolute right-2 gap-2">
+                                                <FaRegTrashAlt onClick={() => { deleteTask(task.id, taskList.id); }} className="hover:text-black"></FaRegTrashAlt>
+                                                <FaEdit onClick={() => { setEditTaskId(task.id); setTaskName(task.name);}} className=" hover:text-black"></FaEdit>
+                                            </div>
+                                        </div>
+                                    )
+                                    }
+
+                                </div>
                             ))}
 
                             {enterTaskListId !== taskList.id &&
@@ -201,10 +306,10 @@ export default function Board() {
                             }
                             {enterTaskListId === taskList.id &&
                                 <div className="mt-2">
-                                        <NameAndInputPreview type="task" name="Enter Task Name..." value={taskName} setter={setTaskName} />
+                                    <NameAndInputPreview type="task" name="Enter Task Name..." value={taskName} setter={setTaskName} />
                                     <div className="flex gap-2 mt-2">
-                                        <button onClick={newTask} className= "border rounded p-2">Add Task +</button>
-                                        <button className = "rounded" onClick={() => { setEnterTaskListId(null); setTaskName(""); }}><X></X></button>
+                                        <button onClick={newTask} className="border rounded p-2">Add Task +</button>
+                                        <button className="rounded" onClick={() => { setEnterTaskListId(null); setTaskName(""); }}><X></X></button>
                                     </div>
                                 </div>
                             }
@@ -214,7 +319,7 @@ export default function Board() {
 
                 {
                     !createListPrompt &&
-                    <button onClick={() => setCreateListPrompt(true)} className="py-2 justify-center items-center border rounded w-60 flex-none">+ Create a new list</button>
+                    <button onClick={() => setCreateListPrompt(true)} className="py-2 justify-center shadow-lg items-center order rounded w-60 flex-none">+ Create a new list</button>
                 }
                 {
                     createListPrompt &&
@@ -237,11 +342,10 @@ export default function Board() {
 
 }
 
-import { FaCheckCircle, FaRegCircle } from "react-icons/fa";
 
 
-function ToggleCheckIcon({taskId, listId, boardId, completed} : {taskId: number, listId: number, boardId: string, completed: boolean}){
-    const [isChecked, setIsChecked]= useState(completed);
+function ToggleCheckIcon({ taskId, listId, boardId, completed }: { taskId: number, listId: number, boardId: string | undefined, completed: boolean }) {
+    const [isChecked, setIsChecked] = useState(completed);
 
     const handleClick = () => {
         setIsChecked(!isChecked);
@@ -259,15 +363,15 @@ function ToggleCheckIcon({taskId, listId, boardId, completed} : {taskId: number,
                 }),
                 credentials: "include"
             });
-        }catch(e){
+        } catch (e) {
             console.error("Error toggling task completion:", e);
         }
     }
 
-    return(
+    return (
         <div onClick={handleClick} className={`${isChecked ? 'text-green-500' : ''}`}>
-        {isChecked && < FaCheckCircle />}
-        {!isChecked && <FaRegCircle />}
+            {isChecked && < FaCheckCircle />}
+            {!isChecked && <FaRegCircle />}
         </div>
     )
 }

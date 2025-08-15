@@ -147,7 +147,7 @@ public class TasksController : ControllerBase
 
         return Ok(new { message = task });
     }
-    [HttpPost ("togglecheck")]
+    [HttpPost("togglecheck")]
     public IActionResult ToggleCheck([FromBody] ToggleCheckRequest request) // could you do this without the board id? Get the board id from the task id and then solve it from there...
     {
         IQueryable<Board>? boardQuery = null;
@@ -169,6 +169,59 @@ public class TasksController : ControllerBase
         _context.SaveChanges();
 
         return Ok(new { message = taskId });
+    }
+    [HttpPut("edittask")]
+    public IActionResult EditTask([FromBody] EditTaskNameRequest request)
+    {
+        IQueryable<Board>? boardQuery = null;
+        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+
+        if (boardQuery == null)
+            return BadRequest(new { message = message });
+
+        Board board = boardQuery.FirstOrDefault();
+
+        var taskList = board.TaskLists.FirstOrDefault(tl => tl.Id == request.ListId);
+
+        if (taskList == null)
+            return NotFound(new { message = "Task list not found" });
+
+        var task = taskList.Tasks.FirstOrDefault(t => t.Id == request.TaskId);
+
+        if (task == null)
+            return NotFound(new { message = "Task not found" });
+
+        task.Name = request.TaskName;
+        _context.SaveChanges();
+
+        return Ok(new { message = task });
+    }
+
+    [HttpDelete("deletetask")]
+    public IActionResult DeleteTask([FromBody] DeleteTaskRequest request)
+    {
+        IQueryable<Board>? boardQuery = null;
+        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+
+        if (boardQuery == null)
+            return BadRequest(new { message = message });
+
+        Board board = boardQuery.FirstOrDefault();
+
+        var taskList = board.TaskLists.FirstOrDefault(tl => tl.Id == request.ListId);
+
+        if (taskList == null)
+            return NotFound(new { message = "Task list not found" });
+
+        var task = taskList.Tasks.FirstOrDefault(t => t.Id == request.TaskId);
+
+        if (task == null)
+            return NotFound(new { message = "Task not found" });
+
+        taskList.Tasks.Remove(task);
+        _context.SaveChanges();
+
+        return Ok(new { message = "Task deleted successfully" });
     }
 }
 
@@ -202,4 +255,20 @@ public class ToggleCheckRequest
     public int BoardId { get; set; }
     public int ListId { get; set; }
     public bool Completed { get; set; }
+}
+
+public class EditTaskNameRequest
+{
+    public int TaskId { get; set; }
+    public string TaskName { get; set; }
+    public int ListId { get; set; }
+    public int BoardId { get; set; }
+}
+
+public class DeleteTaskRequest
+{
+    public int TaskId { get; set; }
+    public int ListId { get; set; }
+    public int BoardId { get; set; }
+
 }
