@@ -166,7 +166,7 @@ export default function Board() {
             <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 items-start">
                 {
                     taskLists.map(taskList => (
-                        <div className={`relative border rounded w-60  flex-none p-2`}>
+                        <div className={`relative shadow rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2`}>
 
                             <div onClick={e => { e.stopPropagation(); setOpenMenuId(taskList.id) }} className="rounded absolute top-0 right-0 w-8 h-8 flex justify-center items-center">
                                 <FiMoreHorizontal size={16} />
@@ -190,7 +190,7 @@ export default function Board() {
                                 {taskList.name}
                             </div>
                             {taskList.tasks && taskList.tasks.map((task) => (
-                                <div>{task.name}</div>
+                                 <div className = "flex items-center gap-1 rounded shadow bg-white p-2 hover:border-blue-500"><ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>{' '}{task.name}</div>
                             ))}
 
                             {enterTaskListId !== taskList.id &&
@@ -237,7 +237,37 @@ export default function Board() {
 
 }
 
+import { FaCheckCircle, FaRegCircle } from "react-icons/fa";
 
-function ToggleCheckIcon(){
 
+function ToggleCheckIcon({taskId, listId, boardId, completed} : {taskId: number, listId: number, boardId: string, completed: boolean}){
+    const [isChecked, setIsChecked]= useState(completed);
+
+    const handleClick = () => {
+        setIsChecked(!isChecked);
+        try {
+            fetch("http://localhost:5235/api/tasks/togglecheck", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    TaskId: taskId, // Assuming task is defined in the scope
+                    BoardId: boardId,
+                    ListId: listId,
+                    Completed: !isChecked
+                }),
+                credentials: "include"
+            });
+        }catch(e){
+            console.error("Error toggling task completion:", e);
+        }
+    }
+
+    return(
+        <div onClick={handleClick} className={`${isChecked ? 'text-green-500' : ''}`}>
+        {isChecked && < FaCheckCircle />}
+        {!isChecked && <FaRegCircle />}
+        </div>
+    )
 }

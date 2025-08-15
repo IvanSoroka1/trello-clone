@@ -27,7 +27,7 @@ public class TasksController : ControllerBase
         if (email == null)
             return "Email not found";
 
-        var possibleBoard = _context.Boards.Include(b => b.TaskLists).Where(u => u.Id == BoardId); // Is this Include always necessary?
+        var possibleBoard = _context.Boards.Include(b => b.TaskLists).ThenInclude(b => b.Tasks).Where(u => u.Id == BoardId); // Is this Include always necessary?
 
         if (possibleBoard == null)
             return "No board with such an ID exists";
@@ -147,6 +147,29 @@ public class TasksController : ControllerBase
 
         return Ok(new { message = task });
     }
+    [HttpPost ("togglecheck")]
+    public IActionResult ToggleCheck([FromBody] ToggleCheckRequest request) // could you do this without the board id? Get the board id from the task id and then solve it from there...
+    {
+        IQueryable<Board>? boardQuery = null;
+        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+
+        if (boardQuery == null)
+            return BadRequest(new { message = message });
+
+        Board board = boardQuery.FirstOrDefault();
+
+        var taskId = board.TaskLists.SelectMany(tl => tl.Tasks).FirstOrDefault(t => t.Id == request.TaskId);
+
+        if (taskId == null)
+            return NotFound(new { message = "Task not found" });
+
+
+
+        taskId.Completed = request.Completed;
+        _context.SaveChanges();
+
+        return Ok(new { message = taskId });
+    }
 }
 
 public class TaskListsRequest
@@ -162,7 +185,7 @@ public class MakeTaskListRequest
 
 public class DeleteTaskListReq
 {
-    public int BoardId { get; set; }
+    public int BoardId { get; set; } // do you need to send this? 
     public int ListId { get; set; }
 }
 
@@ -171,4 +194,12 @@ public class NewTaskRequest
     public string TaskName { get; set; }
     public int BoardId { get; set; }
     public int ListId { get; set; }
+}
+
+public class ToggleCheckRequest
+{
+    public int TaskId { get; set; }
+    public int BoardId { get; set; }
+    public int ListId { get; set; }
+    public bool Completed { get; set; }
 }

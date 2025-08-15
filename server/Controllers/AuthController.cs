@@ -35,6 +35,9 @@ public class AuthController : ControllerBase
 
         if (user != null && user.PasswordHash == request.Password)
         {
+            if(user.Verified == false)
+                return BadRequest(new { message = "Please verify your email first" });
+                
             var token = GenerateJwtToken(user.Email);
 
             var cookieOptions = new CookieOptions
