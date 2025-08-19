@@ -118,10 +118,10 @@ public class TasksController : ControllerBase
 
         board.TaskLists.Remove(taskList);
 
-        for(int n = 0; n < board.TaskLists.Count; n++)
-            if(board.TaskLists[n].Position > taskList.Position)
+        for (int n = 0; n < board.TaskLists.Count; n++)
+            if (board.TaskLists[n].Position > taskList.Position)
                 board.TaskLists[n].Position--; // Decrease position of all task lists that were after the deleted one
-            
+
 
         _context.SaveChanges();
 
@@ -148,6 +148,7 @@ public class TasksController : ControllerBase
         {
             Name = request.TaskName,
             Completed = false,
+            Position = taskList.Tasks.Count // Set the position of the task to the end of the task list
         };
 
         taskList.Tasks.Add(task);
@@ -228,8 +229,16 @@ public class TasksController : ControllerBase
 
         taskList.Tasks.Remove(task);
 
+        for (int i = 0; i < taskList.Tasks.Count; i++)
+        {
+            if (taskList.Tasks[i].Position > task.Position)
+            {
+                taskList.Tasks[i].Position--; // Decrease position of all tasks that were after the deleted one
+            }
+        }
 
-        
+
+
         _context.SaveChanges();
 
         return Ok(new { message = "Task deleted successfully" });
@@ -261,7 +270,41 @@ public class TasksController : ControllerBase
 
         _context.SaveChanges();
 
-        return Ok(new { message = taskList });
+        return Ok();
+    }
+
+    [HttpPut("edittaskposition")]
+    public IActionResult EditTaskPosition([FromBody] EditTaskPositionRequest request)
+    {
+        IQueryable<Board>? boardQuery = null;
+        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+
+        if (boardQuery == null)
+            return BadRequest(new { message = message });
+
+        Board board = boardQuery.FirstOrDefault();
+
+        var taskList = board.TaskLists.FirstOrDefault(tl => tl.Id == request.ListId);
+
+        if (taskList == null)
+            return NotFound(new { message = "Task list not found" });
+
+        var task1 = taskList.Tasks.FirstOrDefault(t => t.Position == request.Index1);
+
+        if (task1 == null)
+            return NotFound(new { message = "Task not found" });
+
+        var task2 = taskList.Tasks.FirstOrDefault(t => t.Position == request.Index2);
+
+        if (task2 == null)
+            return NotFound(new { message = "Task not found" });
+
+        task1.Position = request.Index2;
+        task2.Position = request.Index1;
+
+        _context.SaveChanges();
+
+        return Ok();
     }
 }
 
@@ -318,5 +361,16 @@ public class EditTaskListPositionRequest
     public int Index1 { get; set; }
     public int Index2 { get; set; } // the new position of the task list in the board
     public int BoardId { get; set; }
+
+}
+
+public class EditTaskPositionRequest
+{
+    public int BoardId { get; set; }
+    public int ListId { get; set; }
+
+    public int Index1 { get; set; }
+
+    public int Index2 { get; set; } 
 
 }

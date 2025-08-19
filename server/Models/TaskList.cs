@@ -10,9 +10,10 @@ namespace server.Models
 
     }
     public class Task
-        {
-            public int Id{ get; set; }
-            public string Name { get; set; }
-            public bool Completed { get; set; }
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public bool Completed { get; set; }
+        public int Position { get; set; } // position of the task in the task list, used for drag and drop functionality
         }
 }

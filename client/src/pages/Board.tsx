@@ -23,6 +23,7 @@ interface Task {
     id: number;
     name: string;
     completed: boolean;
+    position: number;
 }
 
 export default function Board() {
@@ -48,15 +49,21 @@ export default function Board() {
                 }
                 const data = await response.json();
 
-                for (const i in data.message) {
-                    for (const j in data.message) {
-                        if (data.message[j].position == i) {
-                            const copy = data.message[i];
-                            data.message[i] = data.message[j];
-                            data.message[j] = copy;
-                        }
-                    }
+                // for (const i in data.message) {
+                //     for (const j in data.message) {
+                //         if (data.message[j].position == i) {
+                //             const copy = data.message[i];
+                //             data.message[i] = data.message[j];
+                //             data.message[j] = copy;
+                //         }
+                //     }
+                // }
+                data.message.sort((a: TaskList, b: TaskList) => a.position - b.position);
+
+                for(const i in data.message) {
+                    data.message[i].tasks.sort((a: Task, b: Task) => a.position - b.position);
                 }
+
                 setTaskLists(data.message);
 
                 console.log("Success! Board data:", data);
@@ -263,7 +270,29 @@ export default function Board() {
         } catch (e) {
             console.log(e);
         }
+    }
+    const editTaskPosition = async (index1: number, index2: number, taskListId: number) => {
+        try {
+            const response = await fetch("http://localhost:5235/api/tasks/edittaskposition", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    Index1: index1,
+                    Index2: index2,
+                    ListId: taskListId,
+                    BoardId: id
+                }),
+                credentials: "include"
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw (data.message);
 
+        } catch (e) {
+            console.log(e);
+        }
     }
 
     const clickDownTaskList = (e: React.MouseEvent<HTMLDivElement>, taskListId: number) => {
@@ -350,6 +379,7 @@ export default function Board() {
                     }
                     return newTaskLists;
                 })
+                editTaskPosition(index1, index2, taskList.id);
 
             }
 
