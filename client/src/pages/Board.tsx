@@ -50,7 +50,7 @@ export default function Board() {
 
                 for (const i in data.message) {
                     for (const j in data.message) {
-                        if (data.message[j].position == i){
+                        if (data.message[j].position == i) {
                             const copy = data.message[i];
                             data.message[i] = data.message[j];
                             data.message[j] = copy;
@@ -285,11 +285,12 @@ export default function Board() {
         setPosition({ x: offsetX, y: offsetY });
     }
 
-    const releaseTaskList = (e: React.MouseEvent<HTMLDivElement>) => {
+    const releaseTaskList = (e: React.MouseEvent<HTMLDivElement>, type: string = "tasklist-", taskList?: TaskList) => {
         setPosition(null);
         setOriginalPosition(null);
         setOriginalCoordinates(null);
         setDraggingTaskListId(null);
+        setDraggingTaskId(null);
         //const id = e.currentTarget.
 
         if (!originalTaskListId) return;
@@ -299,41 +300,58 @@ export default function Board() {
 
         // Find the first card under the cursor that isn’t the dragged one
         const targetEl = elements.find(
-            el => el.id?.startsWith("tasklist-") && el.id !== `tasklist-${originalTaskListId}`
+            el => el.id?.startsWith(type) && el.id !== `${type}${originalTaskListId}`
         );
 
         if (targetEl) {
-            //const targetTaskListPosition = parseInt(targetEl.id.replace("tasklist-", ""), 10);
-            const targetId = parseInt(targetEl.id.replace("tasklist-", ""), 10);
+            const targetId = parseInt(targetEl.id.replace(type, ""), 10);
 
-            const index1 = taskLists.findIndex(list => list.id === targetId);
-            const index2 = taskLists.findIndex(list => list.id === originalTaskListId);
+            if (type === "tasklist-") {
+                const index1 = taskLists.findIndex(list => list.id === targetId);
+                const index2 = taskLists.findIndex(list => list.id === originalTaskListId);
 
-            setTaskLists(prev => {
-                const newTaskLists = [...prev];
+                setTaskLists(prev => {
+                    const newTaskLists = [...prev];
+                    if (index1 !== -1 && index2 !== -1) {
+                        const copy = newTaskLists[index1];
+                        newTaskLists[index1] = newTaskLists[index2];
+                        newTaskLists[index2] = copy;
+                    }
+                    return newTaskLists;
+                });
+                editTaskListPosition(index1, index2);
+            }
+            else if (taskList !== undefined) {
+                const index1 = taskList.tasks.findIndex(task => task.id === targetId);
+                const index2 = taskList.tasks.findIndex(task => task.id === originalTaskListId);
 
+                setTaskLists(prev => {
+                    const newTaskLists = [...prev];
+                    const taskListIndex = newTaskLists.findIndex(list => list.id === taskList.id);
+                    if (taskListIndex !== -1 && index1 !== -1 && index2 !== -1) {
+                        // const newTasks = [...newTaskLists[taskListIndex].tasks];
+                        // const copy = newTasks[index1];
+                        // newTasks[index1] = newTasks[index2];
+                        // newTasks[index2] = copy;
+                        // newTaskLists[taskListIndex].tasks = newTasks;
 
-                if (index1 !== -1 && index2 !== -1) {
-                    const copy = newTaskLists[index1];
-                    newTaskLists[index1] = newTaskLists[index2];
-                    newTaskLists[index2] = copy;
-                }
+                        const newTasks = [...newTaskLists[taskListIndex].tasks];
+                        // Reorder deterministically (no matter how many times this runs)
+                        const reordered = newTasks.map((t, i) => {
+                            if (i === index1) return newTasks[index2];
+                            if (i === index2) return newTasks[index1];
+                            return t;
+                        });
+                        newTaskLists[taskListIndex] = {
+                            ...newTaskLists[taskListIndex],
+                            tasks: reordered,
+                        };
+                        //newTaskLists[taskListIndex].tasks = reordered;
+                    }
+                    return newTaskLists;
+                })
 
-                // const index = newTaskLists.findIndex(list => list.id === taskListId);
-                // if (index !== -1) {
-                //     newTaskLists[index] = oldTaskList;
-                // }
-
-                // const newTaskLists = [...prev];
-                // const copy = newTaskLists[originalTaskListPosition];
-                // newTaskLists[originalTaskListPosition] = newTaskLists[targetTaskListPosition];
-                // newTaskLists[targetTaskListPosition] = copy;
-                // newTaskLists[originalTaskListPosition].position = targetTaskListPosition;
-                // newTaskLists[targetTaskListPosition].position = originalTaskListPosition;
-
-                return newTaskLists;
-            });
-            editTaskListPosition(index1, index2);
+            }
 
         }
         setOriginalTaskListId(null);
@@ -348,6 +366,7 @@ export default function Board() {
     const [originalCoordinates, setOriginalCoordinates] = useState<{ x: number; y: number } | null>(null);
     const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
     const [draggingTaskListId, setDraggingTaskListId] = useState<number | null>(null);
+    const [draggingTaskId, setDraggingTaskId] = useState<number | null>(null);
 
     const [createListPrompt, setCreateListPrompt] = useState(false);
     const [listName, setListName] = useState('');
@@ -364,8 +383,8 @@ export default function Board() {
             <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 items-start h-screen">
                 {
                     taskLists.map(taskList => (
-                        <div id={`tasklist-${taskList.id}`}
-                            onMouseDown={(e) => { clickDownTaskList(e, taskList.id); setDraggingTaskListId(taskList.id) }} onMouseMove={moveTaskList} onMouseUp={(e) => releaseTaskList(e)} className={`relative rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2 ${draggingTaskListId === taskList.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskListId === taskList.id ? { left: position.x, top: position.y } : {}} key={taskList.id}>
+                        <div id={`tasklist-${taskList.id}`} key={taskList.id}
+                            onMouseDown={(e) => { clickDownTaskList(e, taskList.id); setDraggingTaskListId(taskList.id) }} onMouseMove={moveTaskList} onMouseUp={(e) => releaseTaskList(e)} className={`relative rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2 ${draggingTaskListId === taskList.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskListId === taskList.id ? { left: position.x, top: position.y } : {}} >
                             <div onMouseDown={(e) => { e.stopPropagation(); }} onClick={e => { e.stopPropagation(); setOpenMenuId(taskList.id) }} className="rounded absolute top-0 right-0 w-8 h-8 flex justify-center items-center">
                                 <FiMoreHorizontal size={16} />
 
@@ -388,7 +407,7 @@ export default function Board() {
                                 {taskList.name}
                             </div>
                             {taskList.tasks && taskList.tasks.map((task) => (
-                                <div>
+                                <div id={`task-${task.id}`} key={task.id}>
                                     {editTaskId === task.id ? (
                                         <div>
 
@@ -405,7 +424,7 @@ export default function Board() {
                                         </div>
 
                                     ) : (
-                                        <div className="relative flex items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500">
+                                        <div onMouseDown={(e) => { clickDownTaskList(e, task.id); setDraggingTaskId(task.id); e.stopPropagation(); }} onMouseMove={(e) => { moveTaskList(e); e.stopPropagation(); }} onMouseUp={(e) => { releaseTaskList(e, 'task-', taskList); e.stopPropagation(); }} className={`relative flex items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500 ${draggingTaskId === task.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskId === task.id ? { left: position.x, top: position.y } : {}} >
                                             <ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>
                                             {task.name}
                                             <div className="flex text-gray-500 absolute right-2 gap-2">
