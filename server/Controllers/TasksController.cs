@@ -87,7 +87,9 @@ public class TasksController : ControllerBase
         {
             Name = request.TaskListName,
 
-            Tasks = new List<server.Models.Task>()
+            Tasks = new List<server.Models.Task>(),
+
+            Position = board.TaskLists.Count
         };
 
         board.TaskLists.Add(taskList);
@@ -115,6 +117,12 @@ public class TasksController : ControllerBase
             return NotFound(new { message = "Task list not found" });
 
         board.TaskLists.Remove(taskList);
+
+        for(int n = 0; n < board.TaskLists.Count; n++)
+            if(board.TaskLists[n].Position > taskList.Position)
+                board.TaskLists[n].Position--; // Decrease position of all task lists that were after the deleted one
+            
+
         _context.SaveChanges();
 
         return Ok(new { message = "Task list deleted successfully" });
@@ -219,9 +227,41 @@ public class TasksController : ControllerBase
             return NotFound(new { message = "Task not found" });
 
         taskList.Tasks.Remove(task);
+
+
+        
         _context.SaveChanges();
 
         return Ok(new { message = "Task deleted successfully" });
+    }
+
+    [HttpPut("edittasklistposition")]
+    public IActionResult EditTaskListPosition([FromBody] EditTaskListPositionRequest request)
+    {
+        IQueryable<Board>? boardQuery = null;
+        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+
+        if (boardQuery == null)
+            return BadRequest(new { message = message });
+
+        Board board = boardQuery.FirstOrDefault();
+
+        var taskList = board.TaskLists.FirstOrDefault(tl => tl.Position == request.Index1);
+
+        if (taskList == null)
+            return NotFound(new { message = "Task list not found" });
+
+        var swappingList = board.TaskLists.FirstOrDefault(tl => tl.Position == request.Index2);
+
+        if (swappingList == null)
+            return NotFound(new { message = "Swapping task list not found" });
+
+        taskList.Position = request.Index2;
+        swappingList.Position = request.Index1;
+
+        _context.SaveChanges();
+
+        return Ok(new { message = taskList });
     }
 }
 
@@ -269,6 +309,14 @@ public class DeleteTaskRequest
 {
     public int TaskId { get; set; }
     public int ListId { get; set; }
+    public int BoardId { get; set; }
+
+}
+
+public class EditTaskListPositionRequest
+{
+    public int Index1 { get; set; }
+    public int Index2 { get; set; } // the new position of the task list in the board
     public int BoardId { get; set; }
 
 }

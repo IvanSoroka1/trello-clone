@@ -57,7 +57,7 @@ export default function Dashboard() {
             if (!response.ok)
                 throw Error("bad request");
             console.log(data.message);
-            navigate(`/board/${data.message.id}`);
+            navigate(`/board/${data.message.id}`, {state: {boardName: data.message.title}});
 
         } catch (e) {
             console.log("Error: ", e);
@@ -72,7 +72,7 @@ export default function Dashboard() {
             <div className="max-w-7xl mx-auto mt-2 flex flex-row gap-2">
                 {
                     boards.map((item) => (
-                        <button onClick={() => {navigate(`/board/${item.id}`)}}  className="shadow-lg rounded w-50 h-25 flex justify-center items-center hover:bg-gray-100" key={item.id}>{item.title}</button>
+                        <button onClick={() => {navigate(`/board/${item.id}`, {state: {boardName: item.title}});}}  className="shadow-lg rounded w-50 h-25 flex justify-center items-center hover:bg-gray-100" key={item.id}>{item.title}</button>
                     )
                     )
                 }

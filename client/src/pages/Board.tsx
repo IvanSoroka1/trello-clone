@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { use, useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import NameAndInput, { NameAndInputPreview } from "../components/NameAndInput";
 import { List, X } from "lucide-react";
 import { FiMoreHorizontal } from "react-icons/fi";
@@ -16,6 +16,7 @@ interface TaskList {
     id: number;
     name: string;
     tasks: Task[];
+    position: number;
 }
 
 interface Task {
@@ -27,19 +28,14 @@ interface Task {
 export default function Board() {
 
     const [taskLists, setTaskLists] = useState<TaskList[]>([]);
-
+    const location = useLocation();
+    const boardName = location.state?.boardName || "Board Name"; // but if you have a bookmark for the page, you're going to need to look in the database for the name of the board
     const { id } = useParams();
     const navigate = useNavigate();
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
     const [enterTaskListId, setEnterTaskListId] = useState<number | null>(null);
 
     useEffect(() => {
-        const handleClick = (e: MouseEvent) => {
-            setOpenMenuId(null);
-        };
-        if (openMenuId !== null) {
-            document.addEventListener("click", handleClick);
-        }
         try {
             fetch(`http://localhost:5235/api/tasks/tasklists/${id}`, {
                 method: "GET",
@@ -51,16 +47,34 @@ export default function Board() {
                     return;
                 }
                 const data = await response.json();
+
+                for (const i in data.message) {
+                    for (const j in data.message) {
+                        if (data.message[j].position == i){
+                            const copy = data.message[i];
+                            data.message[i] = data.message[j];
+                            data.message[j] = copy;
+                        }
+                    }
+                }
                 setTaskLists(data.message);
+
                 console.log("Success! Board data:", data);
             })
         } catch (e) {
             console.log(e);
         }
-        finally {
-            return () => { document.removeEventListener("click", handleClick); };
+    }, []);
+
+    useEffect(() => {
+        const closeMenu = (e: MouseEvent) => {
+            setOpenMenuId(null);
+        };
+        if (openMenuId !== null) {
+            document.addEventListener("click", closeMenu);
         }
-    }, [openMenuId]);
+        return () => { document.removeEventListener("click", closeMenu); };
+    }, [openMenuId])
 
 
     const newTaskList = async () => {
@@ -215,7 +229,7 @@ export default function Board() {
             else {
                 setTaskLists(prevTaskLists => prevTaskLists.map(taskList => {
                     if (taskList.id !== taskListId)
-                         return taskList;
+                        return taskList;
                     return {
                         ...taskList,
                         tasks: taskList.tasks.filter(task => task.id !== taskId)
@@ -228,6 +242,113 @@ export default function Board() {
         }
     }
 
+    const editTaskListPosition = async (index1: number, index2: number) => {
+        try {
+            const response = await fetch("http://localhost:5235/api/tasks/edittasklistposition", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    Index1: index1,
+                    Index2: index2,
+                    BoardId: id
+                }),
+                credentials: "include"
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw (data.message);
+
+        } catch (e) {
+            console.log(e);
+        }
+
+    }
+
+    const clickDownTaskList = (e: React.MouseEvent<HTMLDivElement>, taskListId: number) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+
+        // const offsetX = e.clientX - rect.left;
+        // const offsetY = e.clientY - rect.top;
+        // setPosition({ x: offsetX, y: offsetY });
+        setOriginalCoordinates({ x: rect.left, y: rect.top });
+        setOriginalPosition({ x: e.clientX, y: e.clientY });
+        setOriginalTaskListId(taskListId);
+    }
+
+    const moveTaskList = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!originalPosition) return;
+        if (!originalCoordinates) return;
+        const offsetX = e.clientX - originalPosition.x;
+        const offsetY = e.clientY - originalPosition.y;
+        setPosition({ x: offsetX, y: offsetY });
+    }
+
+    const releaseTaskList = (e: React.MouseEvent<HTMLDivElement>) => {
+        setPosition(null);
+        setOriginalPosition(null);
+        setOriginalCoordinates(null);
+        setDraggingTaskListId(null);
+        //const id = e.currentTarget.
+
+        if (!originalTaskListId) return;
+
+        // Get all elements under the cursor
+        const elements = document.elementsFromPoint(e.clientX, e.clientY);
+
+        // Find the first card under the cursor that isn’t the dragged one
+        const targetEl = elements.find(
+            el => el.id?.startsWith("tasklist-") && el.id !== `tasklist-${originalTaskListId}`
+        );
+
+        if (targetEl) {
+            //const targetTaskListPosition = parseInt(targetEl.id.replace("tasklist-", ""), 10);
+            const targetId = parseInt(targetEl.id.replace("tasklist-", ""), 10);
+
+            const index1 = taskLists.findIndex(list => list.id === targetId);
+            const index2 = taskLists.findIndex(list => list.id === originalTaskListId);
+
+            setTaskLists(prev => {
+                const newTaskLists = [...prev];
+
+
+                if (index1 !== -1 && index2 !== -1) {
+                    const copy = newTaskLists[index1];
+                    newTaskLists[index1] = newTaskLists[index2];
+                    newTaskLists[index2] = copy;
+                }
+
+                // const index = newTaskLists.findIndex(list => list.id === taskListId);
+                // if (index !== -1) {
+                //     newTaskLists[index] = oldTaskList;
+                // }
+
+                // const newTaskLists = [...prev];
+                // const copy = newTaskLists[originalTaskListPosition];
+                // newTaskLists[originalTaskListPosition] = newTaskLists[targetTaskListPosition];
+                // newTaskLists[targetTaskListPosition] = copy;
+                // newTaskLists[originalTaskListPosition].position = targetTaskListPosition;
+                // newTaskLists[targetTaskListPosition].position = originalTaskListPosition;
+
+                return newTaskLists;
+            });
+            editTaskListPosition(index1, index2);
+
+        }
+        setOriginalTaskListId(null);
+    }
+
+    // const clickDownTask(){
+
+    // }
+
+    const [originalTaskListId, setOriginalTaskListId] = useState<number | null>(null);
+    const [originalPosition, setOriginalPosition] = useState<{ x: number; y: number } | null>(null);
+    const [originalCoordinates, setOriginalCoordinates] = useState<{ x: number; y: number } | null>(null);
+    const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+    const [draggingTaskListId, setDraggingTaskListId] = useState<number | null>(null);
+
     const [createListPrompt, setCreateListPrompt] = useState(false);
     const [listName, setListName] = useState('');
     const [taskName, setTaskName] = useState('');
@@ -237,15 +358,15 @@ export default function Board() {
     return (
         <div>
             <div className="flex justify-center items-center p-2 border-b">
-                Board Name
+                {boardName}
             </div>
             {/* Fix the scrollbar to be at the bottom of the screen */}
-            <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 items-start">
+            <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 items-start h-screen">
                 {
                     taskLists.map(taskList => (
-                        <div className={`relative shadow rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2`}>
-
-                            <div onClick={e => { e.stopPropagation(); setOpenMenuId(taskList.id) }} className="rounded absolute top-0 right-0 w-8 h-8 flex justify-center items-center">
+                        <div id={`tasklist-${taskList.id}`}
+                            onMouseDown={(e) => { clickDownTaskList(e, taskList.id); setDraggingTaskListId(taskList.id) }} onMouseMove={moveTaskList} onMouseUp={(e) => releaseTaskList(e)} className={`relative rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2 ${draggingTaskListId === taskList.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskListId === taskList.id ? { left: position.x, top: position.y } : {}} key={taskList.id}>
+                            <div onMouseDown={(e) => { e.stopPropagation(); }} onClick={e => { e.stopPropagation(); setOpenMenuId(taskList.id) }} className="rounded absolute top-0 right-0 w-8 h-8 flex justify-center items-center">
                                 <FiMoreHorizontal size={16} />
 
                                 {openMenuId === taskList.id &&
@@ -273,7 +394,7 @@ export default function Board() {
 
                                             <div className="fixed z-10 top-0 left-0 w-screen h-screen bg-black opacity-50"> </div>
                                             <div className="relative z-50">
-                                               
+
                                                 <input type="text" value={taskName} onChange={e => setTaskName(e.target.value)} className="rounded p-1 bg-white shadow-lg" />
 
                                                 <div className="flex gap-2 items-center">
@@ -289,7 +410,7 @@ export default function Board() {
                                             {task.name}
                                             <div className="flex text-gray-500 absolute right-2 gap-2">
                                                 <FaRegTrashAlt onClick={() => { deleteTask(task.id, taskList.id); }} className="hover:text-black"></FaRegTrashAlt>
-                                                <FaEdit onClick={() => { setEditTaskId(task.id); setTaskName(task.name);}} className=" hover:text-black"></FaEdit>
+                                                <FaEdit onClick={() => { setEditTaskId(task.id); setTaskName(task.name); }} className=" hover:text-black"></FaEdit>
                                             </div>
                                         </div>
                                     )
