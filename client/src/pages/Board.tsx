@@ -60,7 +60,7 @@ export default function Board() {
                 // }
                 data.message.sort((a: TaskList, b: TaskList) => a.position - b.position);
 
-                for(const i in data.message) {
+                for (const i in data.message) {
                     data.message[i].tasks.sort((a: Task, b: Task) => a.position - b.position);
                 }
 
@@ -295,7 +295,31 @@ export default function Board() {
         }
     }
 
-    const clickDownTaskList = (e: React.MouseEvent<HTMLDivElement>, taskListId: number) => {
+    const insertTask = async (index: number, taskListId: number, task: Task) => {
+        try {
+            const response = await fetch("http://localhost:5235/api/tasks/inserttask", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    Index: index,
+                    ListId: taskListId,
+                    Task: task,
+                    BoardId: id
+                }),
+                credentials: "include"
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw (data.message);
+
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    const clickDownTaskList = (e: React.MouseEvent<HTMLDivElement>, taskListId?: number, task?: number) => {
         const rect = e.currentTarget.getBoundingClientRect();
 
         // const offsetX = e.clientX - rect.left;
@@ -304,6 +328,7 @@ export default function Board() {
         setOriginalCoordinates({ x: rect.left, y: rect.top });
         setOriginalPosition({ x: e.clientX, y: e.clientY });
         setOriginalTaskListId(taskListId);
+        setOriginalTaskId(task);
     }
 
     const moveTaskList = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -322,7 +347,7 @@ export default function Board() {
         setDraggingTaskId(null);
         //const id = e.currentTarget.
 
-        if (!originalTaskListId) return;
+        if (!originalTaskListId && !originalTaskId) return;
 
         // Get all elements under the cursor
         const elements = document.elementsFromPoint(e.clientX, e.clientY);
@@ -351,47 +376,89 @@ export default function Board() {
                 editTaskListPosition(index1, index2);
             }
             else if (taskList !== undefined) {
-                const index1 = taskList.tasks.findIndex(task => task.id === targetId);
-                const index2 = taskList.tasks.findIndex(task => task.id === originalTaskListId);
+                const targetTaskListElement = elements.find(
+                    el => el.id?.startsWith("tasklist-") && el.id !== `tasklist-${originalTaskListId}`
+                );
+                let targetTaskListId = null;
+                if (targetTaskListElement != null) {
+                    targetTaskListId = parseInt(targetTaskListElement.id.replace("tasklist-", ""), 10);
+                }
+                let targetTaskList = null;
+                if (targetTaskListId != null)
+                    targetTaskList = taskLists.find(list => list.id === targetTaskListId);
+                if (targetTaskList == null)
+                    targetTaskList = taskList;
 
-                setTaskLists(prev => {
-                    const newTaskLists = [...prev];
-                    const taskListIndex = newTaskLists.findIndex(list => list.id === taskList.id);
-                    if (taskListIndex !== -1 && index1 !== -1 && index2 !== -1) {
-                        // const newTasks = [...newTaskLists[taskListIndex].tasks];
-                        // const copy = newTasks[index1];
-                        // newTasks[index1] = newTasks[index2];
-                        // newTasks[index2] = copy;
-                        // newTaskLists[taskListIndex].tasks = newTasks;
+                const originalTaskList = taskLists.find(list => list.id === originalTaskListId);
+                if (!originalTaskList) { setOriginalTaskListId(undefined); return; }
 
-                        const newTasks = [...newTaskLists[taskListIndex].tasks];
-                        // Reorder deterministically (no matter how many times this runs)
-                        const reordered = newTasks.map((t, i) => {
-                            if (i === index1) return newTasks[index2];
-                            if (i === index2) return newTasks[index1];
-                            return t;
-                        });
-                        newTaskLists[taskListIndex] = {
-                            ...newTaskLists[taskListIndex],
-                            tasks: reordered,
-                        };
-                        //newTaskLists[taskListIndex].tasks = reordered;
-                    }
-                    return newTaskLists;
-                })
-                editTaskPosition(index1, index2, taskList.id);
+                const index1 = targetTaskList.tasks.findIndex(task => task.id === targetId);
+                const index2 = originalTaskList.tasks.findIndex(task => task.id === originalTaskId);
+
+                if (targetTaskList === originalTaskList) {
+                    setTaskLists(prev => {
+                        const newTaskLists = [...prev];
+                        const taskListIndex = newTaskLists.findIndex(list => list.id === taskList.id);
+                        if (taskListIndex !== -1 && index1 !== -1 && index2 !== -1) {
+                            // const newTasks = [...newTaskLists[taskListIndex].tasks];
+                            // const copy = newTasks[index1];
+                            // newTasks[index1] = newTasks[index2];
+                            // newTasks[index2] = copy;
+                            // newTaskLists[taskListIndex].tasks = newTasks;
+
+                            const newTasks = [...newTaskLists[taskListIndex].tasks];
+                            // Reorder deterministically (no matter how many times this runs)
+                            const reordered = newTasks.map((t, i) => {
+                                if (i === index1) return newTasks[index2];
+                                if (i === index2) return newTasks[index1];
+                                return t;
+                            });
+                            newTaskLists[taskListIndex] = {
+                                ...newTaskLists[taskListIndex],
+                                tasks: reordered,
+                            };
+                            //newTaskLists[taskListIndex].tasks = reordered;
+                        }
+                        return newTaskLists;
+                    })
+                    editTaskPosition(index1, index2, taskList.id);
+                }
+                else {
+                    if (!originalTaskListId)
+                        return;
+                    if (!originalTaskId)
+                        return;
+                    deleteTask(originalTaskId, originalTaskList.id);
+                    setTaskLists(prev => {
+                        const newTaskLists = [...prev];
+                        const taskListIndex = newTaskLists.findIndex(list => list.id === targetTaskList.id);
+                        if (taskListIndex !== -1 && index1 !== -1 && index2 !== -1) {
+
+                            const newArr = [
+                                ...newTaskLists[taskListIndex].tasks.slice(0, index1), // items before index 1
+                                originalTaskList.tasks[index2],                  // new item
+                                ...newTaskLists[taskListIndex].tasks.slice(index1)     // items from index 1 onwards
+                            ];
+                            newTaskLists[taskListIndex] = {
+                                ...newTaskLists[taskListIndex],
+                                tasks: newArr
+                            };
+                        }
+                        return newTaskLists;
+                    })
+                    insertTask(index1, targetTaskList.id, originalTaskList.tasks[index2]);
+
+                }
 
             }
 
         }
-        setOriginalTaskListId(null);
+        setOriginalTaskListId(undefined);
+        setOriginalTaskId(undefined);
     }
 
-    // const clickDownTask(){
-
-    // }
-
-    const [originalTaskListId, setOriginalTaskListId] = useState<number | null>(null);
+    const [originalTaskId, setOriginalTaskId] = useState<number | undefined>(undefined);
+    const [originalTaskListId, setOriginalTaskListId] = useState<number | undefined>(undefined);
     const [originalPosition, setOriginalPosition] = useState<{ x: number; y: number } | null>(null);
     const [originalCoordinates, setOriginalCoordinates] = useState<{ x: number; y: number } | null>(null);
     const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
@@ -454,7 +521,7 @@ export default function Board() {
                                         </div>
 
                                     ) : (
-                                        <div onMouseDown={(e) => { clickDownTaskList(e, task.id); setDraggingTaskId(task.id); e.stopPropagation(); }} onMouseMove={(e) => { moveTaskList(e); e.stopPropagation(); }} onMouseUp={(e) => { releaseTaskList(e, 'task-', taskList); e.stopPropagation(); }} className={`relative flex items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500 ${draggingTaskId === task.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskId === task.id ? { left: position.x, top: position.y } : {}} >
+                                        <div onMouseDown={(e) => { clickDownTaskList(e, taskList.id, task.id); setDraggingTaskId(task.id); e.stopPropagation(); }} onMouseMove={(e) => { moveTaskList(e); e.stopPropagation(); }} onMouseUp={(e) => { releaseTaskList(e, 'task-', taskList); e.stopPropagation(); }} className={`relative flex items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500 ${draggingTaskId === task.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskId === task.id ? { left: position.x, top: position.y } : {}} >
                                             <ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>
                                             {task.name}
                                             <div className="flex text-gray-500 absolute right-2 gap-2">
@@ -539,7 +606,7 @@ function ToggleCheckIcon({ taskId, listId, boardId, completed }: { taskId: numbe
     }
 
     return (
-        <div onClick={handleClick} className={`${isChecked ? 'text-green-500' : ''}`}>
+        <div onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { handleClick(); e.stopPropagation(); }} className={`${isChecked ? 'text-green-500' : ''}`}>
             {isChecked && < FaCheckCircle />}
             {!isChecked && <FaRegCircle />}
         </div>

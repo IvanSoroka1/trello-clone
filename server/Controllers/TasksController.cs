@@ -306,7 +306,46 @@ public class TasksController : ControllerBase
 
         return Ok();
     }
+
+    [HttpPut("inserttask")]
+    public IActionResult InsertTask([FromBody] InsertTaskRequest request)
+    {
+        IQueryable<Board>? boardQuery = null;
+        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+
+        if (boardQuery == null)
+            return BadRequest(new { message = message });
+
+        Board board = boardQuery.FirstOrDefault();
+
+        var taskList = board.TaskLists.FirstOrDefault(tl => tl.Id == request.ListId);
+
+        if (taskList == null)
+            return NotFound(new { message = "Task list not found" });
+
+        var task = new server.Models.Task
+        {
+            Name = request.Task.Name,
+            Completed = request.Task.Completed,
+            Position = request.Index
+        };
+
+        for (int i = 0; i < taskList.Tasks.Count; i++)
+        {
+            if (taskList.Tasks[i].Position >= request.Index)
+            {
+                taskList.Tasks[i].Position++; // Increase position of all tasks that were after the inserted one
+            }
+        }
+
+        taskList.Tasks.Add(task);
+
+        _context.SaveChanges();
+
+        return Ok(new { message = task });
+    }
 }
+
 
 public class TaskListsRequest
 {
@@ -371,6 +410,14 @@ public class EditTaskPositionRequest
 
     public int Index1 { get; set; }
 
-    public int Index2 { get; set; } 
+    public int Index2 { get; set; }
 
+}
+
+public class InsertTaskRequest
+{
+    public server.Models.Task Task { get; set; }
+    public int Index { get; set; }
+    public int ListId { get; set; }
+    public int BoardId { get; set; }
 }
