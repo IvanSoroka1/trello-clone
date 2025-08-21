@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
-import NameAndInput, {NameAndInputPreview} from "../components/NameAndInput";
+import NameAndInput  from "../components/NameAndInput";
 
 interface Board {
     id: number,
@@ -108,6 +108,3 @@ export default function Dashboard() {
 
 }
 
-function TableCard(){
-    return 
-}

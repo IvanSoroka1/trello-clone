@@ -27,7 +27,6 @@ function Login() {
                 console.log("Login Failed: ");
             }
             else{
-                const data = await response.json();
                 console.log("Login successful: ");
                 navigate("/dashboard");
             }

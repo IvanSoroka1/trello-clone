@@ -1,7 +1,7 @@
-import { use, useEffect, useState } from "react";
+import {useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import NameAndInput, { NameAndInputPreview } from "../components/NameAndInput";
-import { List, X } from "lucide-react";
+import  { NameAndInputPreview } from "../components/NameAndInput";
+import { X } from "lucide-react";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { FaCheckCircle, FaRegCircle, FaEdit, FaCheck, FaRegTrashAlt } from "react-icons/fa";
 
@@ -74,7 +74,7 @@ export default function Board() {
     }, []);
 
     useEffect(() => {
-        const closeMenu = (e: MouseEvent) => {
+        const closeMenu = () => {
             setOpenMenuId(null);
         };
         if (openMenuId !== null) {
@@ -468,8 +468,9 @@ export default function Board() {
     const [createListPrompt, setCreateListPrompt] = useState(false);
     const [listName, setListName] = useState('');
     const [taskName, setTaskName] = useState('');
-    const [listHeight, setListHeight] = useState(20);
+    const [, setListHeight] = useState(20);
     const [editTaskId, setEditTaskId] = useState<number | null>(null);
+    const [editTaskListId, setEditTaskListId] = useState<number | null>(null);
 
     return (
         <div>
@@ -499,10 +500,28 @@ export default function Board() {
                                 }
                             </div>
 
-
-                            <div className=" font-semibold">
+                            {
+                            editTaskListId !== taskList.id ?(
+                            <div onClick= {() => {setEditTaskListId(taskList.id)}} className=" font-semibold">
                                 {taskList.name}
-                            </div>
+                            </div>)
+                            :(
+                            <input value={taskList.name} onChange={e => setTaskLists(prev => {
+                                
+                                const newTaskLists = prev.map((element) =>{
+                                    if (element.id === taskList.id)
+                                        element.name = e.target.value;
+                                    return element;
+                                });
+                                
+                                return newTaskLists;
+                            })} 
+                            className="rounded border p-1 bg-white">
+                            </input>
+
+                            )
+                            }
+
                             {taskList.tasks && taskList.tasks.map((task) => (
                                 <div id={`task-${task.id}`} key={task.id}>
                                     {editTaskId === task.id ? (
