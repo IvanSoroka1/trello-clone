@@ -15,7 +15,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         try {
-            fetch("http://localhost:5235/api/dashboard/boards",
+            fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/boards`,
                 {
                     method: "GET",
                     credentials: "include"
@@ -42,7 +42,7 @@ export default function Dashboard() {
 
     const createBoard = async () => {
         try {
-            const response = await fetch("http://localhost:5235/api/dashboard/board", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/board`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"   

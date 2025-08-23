@@ -84,7 +84,7 @@ public class AuthController : ControllerBase
 
         string myEmail = "l.soroka333@gmail.com";
         string password = "qofp wbvs bxqg dfqr ";
-        string websiteName = "http://localhost:5173";
+        string websiteName = "http://18.219.52.3";
 
         Console.WriteLine($"Attempting to send Email to {request.Email}");
         try

@@ -10,7 +10,7 @@ function Verify() {
 
     useEffect(() => {
         try {
-            fetch("http://localhost:5235/api/auth/verify",
+            fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify`,
                 {
                     method: "POST",
                     headers: {

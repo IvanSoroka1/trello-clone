@@ -13,7 +13,7 @@ function Register() {
 
         try {
 
-            const response = await fetch("http://localhost:5235/api/auth/register",
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`,
                 {
                    method: "POST",
                    headers: {
@@ -26,7 +26,7 @@ function Register() {
                 }
             );
 
-            // const response = await fetch("http://localhost:5235/api/email/send",
+            // const response = await fetch(`${import.meta.env.VITE_API_URL}/api/email/send`,
             //     {
             //         method: "POST",
             //         headers: {

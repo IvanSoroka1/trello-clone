@@ -15,7 +15,7 @@ namespace server.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql("Host=localhost;Port=5433;Username=postgres;Password=1234;Database=taskmanager");
+            optionsBuilder.UseNpgsql("Host=database-1.cfg48kwk6vtl.us-east-2.rds.amazonaws.com;Port=5432;Database=postgres;Username=postgres;Password=ulBalYQ29Rbh3Zdi0CXU");
         }
     }
 }

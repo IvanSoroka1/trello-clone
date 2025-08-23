@@ -38,7 +38,7 @@ export default function Board() {
 
     useEffect(() => {
         try {
-            fetch(`http://localhost:5235/api/tasks/tasklists/${id}`, {
+            fetch(`${import.meta.env.VITE_API_URL}/api/tasks/tasklists/${id}`, {
                 method: "GET",
                 credentials: "include"
 
@@ -86,7 +86,7 @@ export default function Board() {
 
     const newTaskList = async () => {
         try {
-            const response = await fetch("http://localhost:5235/api/tasks/maketasklist", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/maketasklist`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -116,7 +116,7 @@ export default function Board() {
         try {
             if (openMenuId === null) return; // No task list is selected
 
-            const response = await fetch("http://localhost:5235/api/tasks/deletetasklist", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/deletetasklist`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json"
@@ -140,7 +140,7 @@ export default function Board() {
         try {
             if (enterTaskListId === null) return; // No task list is selected
 
-            const response = await fetch("http://localhost:5235/api/tasks/newtask", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/newtask`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -177,7 +177,7 @@ export default function Board() {
         try {
             if (editTaskId === null) return; // No task list is selected
 
-            const response = await fetch("http://localhost:5235/api/tasks/edittask", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/edittask`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -218,7 +218,7 @@ export default function Board() {
     }
     const deleteTask = async (taskId: number, taskListId: number) => {
         try {
-            const response = await fetch("http://localhost:5235/api/tasks/deletetask", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/deletetask`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json"
@@ -251,7 +251,7 @@ export default function Board() {
 
     const editTaskListPosition = async (index1: number, index2: number) => {
         try {
-            const response = await fetch("http://localhost:5235/api/tasks/edittasklistposition", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/edittasklistposition`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -273,7 +273,7 @@ export default function Board() {
     }
     const editTaskPosition = async (index1: number, index2: number, taskListId: number) => {
         try {
-            const response = await fetch("http://localhost:5235/api/tasks/edittaskposition", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/edittaskposition`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -297,7 +297,7 @@ export default function Board() {
 
     const insertTask = async (index: number, taskListId: number, task: Task) => {
         try {
-            const response = await fetch("http://localhost:5235/api/tasks/inserttask", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/inserttask`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -606,7 +606,7 @@ function ToggleCheckIcon({ taskId, listId, boardId, completed }: { taskId: numbe
     const handleClick = () => {
         setIsChecked(!isChecked);
         try {
-            fetch("http://localhost:5235/api/tasks/togglecheck", {
+            fetch(`${import.meta.env.VITE_API_URL}/api/tasks/togglecheck`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
