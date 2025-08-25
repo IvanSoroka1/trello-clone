@@ -1,9 +1,11 @@
-import {useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import  { NameAndInputPreview } from "../components/NameAndInput";
+import { NameAndInputPreview } from "../../components/NameAndInput";
 import { X } from "lucide-react";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { FaCheckCircle, FaRegCircle, FaEdit, FaCheck, FaRegTrashAlt } from "react-icons/fa";
+import ElipsesMenuButton from "./ElipsesMenuButton";
+import EditTaskListName from "./EditTaskListId"
 
 
 interface Board {
@@ -12,7 +14,7 @@ interface Board {
     taskLists: TaskList[];
 }
 
-interface TaskList {
+export interface TaskList {
     id: number;
     name: string;
     tasks: Task[];
@@ -38,6 +40,11 @@ export default function Board() {
 
     useEffect(() => {
         try {
+            if (id === undefined) {
+                navigate("/");
+                return;
+            }
+
             fetch(`${import.meta.env.VITE_API_URL}/api/tasks/tasklists/${id}`, {
                 method: "GET",
                 credentials: "include"
@@ -49,15 +56,6 @@ export default function Board() {
                 }
                 const data = await response.json();
 
-                // for (const i in data.message) {
-                //     for (const j in data.message) {
-                //         if (data.message[j].position == i) {
-                //             const copy = data.message[i];
-                //             data.message[i] = data.message[j];
-                //             data.message[j] = copy;
-                //         }
-                //     }
-                // }
                 data.message.sort((a: TaskList, b: TaskList) => a.position - b.position);
 
                 for (const i in data.message) {
@@ -476,52 +474,41 @@ export default function Board() {
         <div>
             <div className="flex justify-center items-center p-2 border-b">
                 {boardName}
+                <div className="absolute right-2">
+                    {
+                        id &&
+                        <ElipsesMenuButton id={parseInt(id, 10)} />
+                    }
+                </div>
             </div>
+
             {/* Fix the scrollbar to be at the bottom of the screen */}
             <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 items-start h-screen">
                 {
                     taskLists.map(taskList => (
                         <div id={`tasklist-${taskList.id}`} key={taskList.id}
-                            onMouseDown={(e) => { clickDownTaskList(e, taskList.id); setDraggingTaskListId(taskList.id) }} onMouseMove={moveTaskList} onMouseUp={(e) => releaseTaskList(e)} className={`relative rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2 ${draggingTaskListId === taskList.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskListId === taskList.id ? { left: position.x, top: position.y } : {}} >
-                            <div onMouseDown={(e) => { e.stopPropagation(); }} onClick={e => { e.stopPropagation(); setOpenMenuId(taskList.id) }} className="rounded absolute top-0 right-0 w-8 h-8 flex justify-center items-center">
-                                <FiMoreHorizontal size={16} />
+                            onMouseDown={(e) => { if (editTaskId != null) return; clickDownTaskList(e, taskList.id); setDraggingTaskListId(taskList.id); e.stopPropagation(); }} onMouseMove={moveTaskList} onMouseUp={(e) => releaseTaskList(e)} className={`relative rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2 ${draggingTaskListId === taskList.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskListId === taskList.id ? { left: position.x, top: position.y } : {}}>
 
-                                {openMenuId === taskList.id &&
-                                    <div className="border rounded text-white-500 w-70 bg-white absolute left-0 top-full z-50  "
-                                        onClick={e => e.stopPropagation()}
-                                    >
-                                        <div className="flex justify-center py-2 font-semibold">
-                                            List Actions
+
+                            <div className="flex flex-row justify-between items-center ">
+                                <EditTaskListName boardId={id!} taskList={taskList} editTaskListId={editTaskListId} setEditTaskListId={setEditTaskListId} setTaskLists={setTaskLists} />
+                                <div style={{ width: "1.5rem", height: "1.5rem" }} onMouseDown={(e) => { e.stopPropagation(); }} onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId == null ? taskList.id : null) }} className="relative rounded flex justify-center items-center hover:bg-gray-200">
+                                    <FiMoreHorizontal size={16} />
+
+                                    {openMenuId === taskList.id &&
+                                        <div className="shadow rounded text-white-500 w-70 bg-white absolute left-0 top-full z-50 "
+                                            onClick={e => e.stopPropagation()}
+                                        >
+                                            <div className="flex justify-center py-2 font-semibold">
+                                                List Actions
+                                            </div>
+                                            <button onClick={deleteTaskList} className="rounded px-2 text-red-500 flex justify-left w-full">
+                                                Delete
+                                            </button>
                                         </div>
-                                        <button onClick={deleteTaskList} className="rounded px-2 text-red-500 flex justify-left w-full">
-                                            Delete
-                                        </button>
-                                    </div>
-                                }
+                                    }
+                                </div>
                             </div>
-
-                            {
-                            editTaskListId !== taskList.id ?(
-                            <div onClick= {() => {setEditTaskListId(taskList.id)}} className=" font-semibold">
-                                {taskList.name}
-                            </div>)
-                            :(
-                            <input value={taskList.name} onChange={e => setTaskLists(prev => {
-                                
-                                const newTaskLists = prev.map((element) =>{
-                                    if (element.id === taskList.id)
-                                        element.name = e.target.value;
-                                    return element;
-                                });
-                                
-                                return newTaskLists;
-                            })} 
-                            className="rounded border p-1 bg-white">
-                            </input>
-
-                            )
-                            }
-
                             {taskList.tasks && taskList.tasks.map((task) => (
                                 <div id={`task-${task.id}`} key={task.id}>
                                     {editTaskId === task.id ? (
@@ -530,39 +517,40 @@ export default function Board() {
                                             <div className="fixed z-10 top-0 left-0 w-screen h-screen bg-black opacity-50"> </div>
                                             <div className="relative z-50">
 
-                                                <input type="text" value={taskName} onChange={e => setTaskName(e.target.value)} className="rounded p-1 bg-white shadow-lg" />
+                                                <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={() => {editTaskName(taskList.id)}} setId={undefined} bold={false}/>
 
                                                 <div className="flex gap-2 items-center">
                                                     <FaCheck onClick={() => editTaskName(taskList.id)} className="text-green-500" /><X className="text-red-500" onClick={() => { setEditTaskId(null) }} />
-
                                                 </div>
                                             </div>
                                         </div>
 
                                     ) : (
-                                        <div onMouseDown={(e) => { clickDownTaskList(e, taskList.id, task.id); setDraggingTaskId(task.id); e.stopPropagation(); }} onMouseMove={(e) => { moveTaskList(e); e.stopPropagation(); }} onMouseUp={(e) => { releaseTaskList(e, 'task-', taskList); e.stopPropagation(); }} className={`relative flex items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500 ${draggingTaskId === task.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskId === task.id ? { left: position.x, top: position.y } : {}} >
+                                        <div onMouseDown={(e) => { clickDownTaskList(e, taskList.id, task.id); setDraggingTaskId(task.id); e.stopPropagation(); }} onMouseMove={(e) => { moveTaskList(e); e.stopPropagation(); }} onMouseUp={(e) => { releaseTaskList(e, 'task-', taskList); e.stopPropagation(); }} className={`relative flex items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500 ${draggingTaskId === task.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskId === task.id ? { left: position.x, top: position.y } : {}}>
                                             <ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>
-                                            {task.name}
-                                            <div className="flex text-gray-500 absolute right-2 gap-2">
-                                                <FaRegTrashAlt onClick={() => { deleteTask(task.id, taskList.id); }} className="hover:text-black"></FaRegTrashAlt>
-                                                <FaEdit onClick={() => { setEditTaskId(task.id); setTaskName(task.name); }} className=" hover:text-black"></FaEdit>
+                                            <div className="whitespace-normal break-words w-5/6 ">{task.name}</div>
+                                            <div className="flex flex-col items-center text-gray-500 gap-1">
+                                                <FaRegTrashAlt size={12} onClick={() => { deleteTask(task.id, taskList.id); }} className="hover:text-black"></FaRegTrashAlt>
+                                                <FaEdit size={12} onClick={() => { setEditTaskId(task.id); setTaskName(task.name); }} className=" hover:text-black"></FaEdit>
                                             </div>
                                         </div>
                                     )
                                     }
 
                                 </div>
-                            ))}
+                            ))
+                            }
 
                             {enterTaskListId !== taskList.id &&
                                 //<button onClick={() => { setEnterTaskListId(taskList.id); setListHeight(prevHeight => prevHeight + 20); }} className="rounded absolute bottom-2 left-2">
-                                <button onClick={() => { setEnterTaskListId(taskList.id); setListHeight(prevHeight => prevHeight + 20); }} className="rounded">
+                                <button onMouseDown={(e) => e.stopPropagation()} onClick={() => { setEnterTaskListId(taskList.id); setListHeight(prevHeight => prevHeight + 20); }} className="rounded">
                                     + Add a new task
                                 </button>
                             }
                             {enterTaskListId === taskList.id &&
                                 <div className="mt-2">
-                                    <NameAndInputPreview type="task" name="Enter Task Name..." value={taskName} setter={setTaskName} />
+                                    {/* <NameAndInputPreview type="task" name="Enter Task Name..." value={taskName} setter={setTaskName} /> */}
+                                    <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={newTask} setId={undefined} bold={false}/>
                                     <div className="flex gap-2 mt-2">
                                         <button onClick={newTask} className="border rounded p-2">Add Task +</button>
                                         <button className="rounded" onClick={() => { setEnterTaskListId(null); setTaskName(""); }}><X></X></button>
@@ -590,8 +578,6 @@ export default function Board() {
                         </div>
                     </div>
                 }
-
-
             </div>
         </div>
     )
@@ -630,4 +616,31 @@ function ToggleCheckIcon({ taskId, listId, boardId, completed }: { taskId: numbe
             {!isChecked && <FaRegCircle />}
         </div>
     )
+}
+
+export function AutoResizeTextarea({ taskName, setTaskName, editFunction, setId, bold }: { taskName: string, setTaskName: React.Dispatch<React.SetStateAction<string>>, editFunction: () => void,  setId: React.Dispatch<React.SetStateAction<number | null>>| undefined, bold: boolean}) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Adjust height on content change
+    useEffect(() => {
+        const el = textareaRef.current;
+        if (el) {
+            el.style.height = "auto"; // reset first
+            el.style.height = `${el.scrollHeight}px`; // then set to fit content
+        }
+    }, [taskName]);
+
+    return (
+        <textarea
+            onMouseDown={(e) => e.stopPropagation( )}
+            ref={textareaRef}
+            value={taskName}
+            onChange={(e) => setTaskName(e.target.value)}
+            className= { `resize-none overflow-hidden break-all rounded p-1 bg-white shadow-lg w-full ${bold ? 'font-semibold' : ''}` }
+            onKeyDown={(e) => (e.key === "Enter" ||  e.key === "Escape") && editFunction()}
+            onBlur={() => setId !== null && setId !== undefined ? setId(null) : undefined}
+            autoFocus
+            placeholder="Enter Task Name..."
+        />
+    );
 }

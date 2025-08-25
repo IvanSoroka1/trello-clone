@@ -12,55 +12,23 @@ using server.Models;
 [Authorize]
 public class TasksController : ControllerBase
 {
+    private readonly IBoardService _boardService;
     private readonly AppDbContext _context;
 
-    public TasksController(AppDbContext context)
+    public TasksController(AppDbContext context, IBoardService boardService)
     {
         _context = context;
+        _boardService = boardService;
     }
 
-    private string checkValidBoard(int BoardId, ref IQueryable<Board> board)
-    {
-
-        var email = User.FindFirst(ClaimTypes.Email)?.Value;
-
-        if (email == null)
-            return "Email not found";
-
-        var possibleBoard = _context.Boards.Include(b => b.TaskLists).ThenInclude(b => b.Tasks).Where(u => u.Id == BoardId); // Is this Include always necessary?
-
-        if (possibleBoard == null)
-            return "No board with such an ID exists";
-
-        var user = _context.Users.Where(u => email == u.Email);
-        var boards = user.SelectMany(u => u.Boards).ToList();
-
-        // if the board id is not in the current user's boards, then it's a bad request
-        // var boardIds = _context.Boards
-        // .Where(b => b.Email == email) // but the email property of the boards was deleted because of the boards array from the user
-        // .Select(b => b.Id)
-        // .ToList();
-
-        // this approach is better cuz there is an "IN" in SQL?
-        //bool boardExists = _context.Boards
-        //.Where(b => b.Email == userEmail)
-        //.Select(b => b.Id)
-        //.Contains(boardIdToCheck);
-
-        var boardIds = user.SelectMany(u => u.Boards).Select(b => b.Id).ToList();
-
-        if (!boardIds.Contains(BoardId))
-            return "You do not have access to this board!";
-
-        board = possibleBoard;
-        return "Success!";
-    }
+    
+    
     [HttpGet("TaskLists/{boardId}")]
     public IActionResult GetTaskLists(int boardId)
     {
 
         IQueryable<Board>? board = null;
-        string? message = checkValidBoard(boardId, ref board);
+        string? message = _boardService.checkValidBoard(boardId, ref board, User);
 
         if (board == null)
             return BadRequest(new { message = message });
@@ -75,7 +43,7 @@ public class TasksController : ControllerBase
     public IActionResult MakeTaskList(MakeTaskListRequest request)
     {
         IQueryable<Board>? boardQuery = null;
-        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
 
 
         if (boardQuery == null)
@@ -104,7 +72,7 @@ public class TasksController : ControllerBase
     public IActionResult DeleteTaskList([FromBody] DeleteTaskListReq request)
     {
         IQueryable<Board>? boardQuery = null;
-        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
 
         if (boardQuery == null)
             return BadRequest(new { message = message });
@@ -132,7 +100,7 @@ public class TasksController : ControllerBase
     public IActionResult NewTask([FromBody] NewTaskRequest request)
     {
         IQueryable<Board>? boardQuery = null;
-        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
 
         if (boardQuery == null)
             return BadRequest(new { message = message });
@@ -160,7 +128,7 @@ public class TasksController : ControllerBase
     public IActionResult ToggleCheck([FromBody] ToggleCheckRequest request) // could you do this without the board id? Get the board id from the task id and then solve it from there...
     {
         IQueryable<Board>? boardQuery = null;
-        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
 
         if (boardQuery == null)
             return BadRequest(new { message = message });
@@ -183,7 +151,7 @@ public class TasksController : ControllerBase
     public IActionResult EditTask([FromBody] EditTaskNameRequest request)
     {
         IQueryable<Board>? boardQuery = null;
-        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
 
         if (boardQuery == null)
             return BadRequest(new { message = message });
@@ -210,7 +178,7 @@ public class TasksController : ControllerBase
     public IActionResult DeleteTask([FromBody] DeleteTaskRequest request)
     {
         IQueryable<Board>? boardQuery = null;
-        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
 
         if (boardQuery == null)
             return BadRequest(new { message = message });
@@ -248,7 +216,7 @@ public class TasksController : ControllerBase
     public IActionResult EditTaskListPosition([FromBody] EditTaskListPositionRequest request)
     {
         IQueryable<Board>? boardQuery = null;
-        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
 
         if (boardQuery == null)
             return BadRequest(new { message = message });
@@ -277,7 +245,7 @@ public class TasksController : ControllerBase
     public IActionResult EditTaskPosition([FromBody] EditTaskPositionRequest request)
     {
         IQueryable<Board>? boardQuery = null;
-        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
 
         if (boardQuery == null)
             return BadRequest(new { message = message });
@@ -311,7 +279,7 @@ public class TasksController : ControllerBase
     public IActionResult InsertTask([FromBody] InsertTaskRequest request)
     {
         IQueryable<Board>? boardQuery = null;
-        string? message = checkValidBoard(request.BoardId, ref boardQuery);
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
 
         if (boardQuery == null)
             return BadRequest(new { message = message });
@@ -343,6 +311,27 @@ public class TasksController : ControllerBase
         _context.SaveChanges();
 
         return Ok(new { message = task });
+    }
+    [HttpPut("edittasklist")]
+    public IActionResult EditTaskList([FromBody] EditTaskListNameRequest request)
+    {
+        IQueryable<Board>? boardQuery = null;
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
+
+        if (boardQuery == null)
+            return BadRequest(new { message = message });
+
+        Board board = boardQuery.FirstOrDefault();
+
+        var taskList = board.TaskLists.FirstOrDefault(tl => tl.Id == request.ListId);
+
+        if (taskList == null)
+            return NotFound(new { message = "Task list not found" });
+
+        taskList.Name = request.TaskListName;
+        _context.SaveChanges();
+
+        return Ok();
     }
 }
 
@@ -420,4 +409,11 @@ public class InsertTaskRequest
     public int Index { get; set; }
     public int ListId { get; set; }
     public int BoardId { get; set; }
+}
+
+public class EditTaskListNameRequest
+{
+    public int BoardId { get; set; }
+    public int ListId { get; set; }
+    public string TaskListName { get; set; }
 }

@@ -12,9 +12,11 @@ public class DashboardController : ControllerBase
 {
     private readonly AppDbContext _context;
 
-    public DashboardController(AppDbContext context)
+    private readonly IBoardService _boardService;
+    public DashboardController(AppDbContext context, IBoardService boardService)
     {
         _context = context;
+        _boardService = boardService;
     }
 
     [HttpGet("boards")]
@@ -34,6 +36,7 @@ public class DashboardController : ControllerBase
         return Ok(new { message = boards });
 
     }
+
     [HttpPost("board")]
     public IActionResult MakeBoard([FromBody] BoardRequest request)
     {
@@ -59,10 +62,37 @@ public class DashboardController : ControllerBase
 
         _context.SaveChanges();
 
-        return Ok(new { message = "Succesfully created board!" });
+        return Ok(new { id = board.Id, title = board.Title });
+    }
+
+    [HttpDelete("board")]
+    public IActionResult DeleteBoard([FromBody] BoardDeletionRequest request)
+    {
+        IQueryable<Board>? boardQuery = null;
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
+
+        if (boardQuery == null)
+            return BadRequest(new { message = message });
+
+        Board board = boardQuery.FirstOrDefault();
+
+        _context.Boards.Remove(board);
+        // should you delete all tasklists that are on the board? And then all tasks that are part of each task? Is this deletion done properly?
+
+        _context.SaveChanges();
+
+        return Ok(new { message = "Board deleted successfully" });
     }
 }
 
 public class BoardRequest {
     public string Title { get; set; }
+}
+
+public class BoardDeletionRequest
+{
+    public int BoardId
+    {
+        get; set;
+    }
 }

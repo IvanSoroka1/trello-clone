@@ -3231,19 +3231,19 @@
     ]
   },
   "packageFolders": {
-    "/root/.nuget/packages/": {}
+    "/Users/lubomyrsoroka/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/app/server.csproj",
+      "projectUniqueName": "/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/server.csproj",
       "projectName": "server",
-      "projectPath": "/app/server.csproj",
-      "packagesPath": "/root/.nuget/packages/",
-      "outputPath": "/app/obj/",
+      "projectPath": "/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/server.csproj",
+      "packagesPath": "/Users/lubomyrsoroka/.nuget/packages/",
+      "outputPath": "/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/root/.nuget/NuGet/NuGet.Config"
+        "/Users/lubomyrsoroka/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
@@ -3323,7 +3323,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.304/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.302/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
