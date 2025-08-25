@@ -57,6 +57,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<IBoardService, BoardService>();
+
 builder.Services.AddControllers();
 var app = builder.Build();
 

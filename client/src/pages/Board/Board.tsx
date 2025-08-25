@@ -1,9 +1,10 @@
-import {useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import  { NameAndInputPreview } from "../components/NameAndInput";
+import { NameAndInputPreview } from "../../components/NameAndInput";
 import { X } from "lucide-react";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { FaCheckCircle, FaRegCircle, FaEdit, FaCheck, FaRegTrashAlt } from "react-icons/fa";
+import ElipsesMenuButton from "./ElipsesMenuButton";
 
 
 interface Board {
@@ -49,15 +50,6 @@ export default function Board() {
                 }
                 const data = await response.json();
 
-                // for (const i in data.message) {
-                //     for (const j in data.message) {
-                //         if (data.message[j].position == i) {
-                //             const copy = data.message[i];
-                //             data.message[i] = data.message[j];
-                //             data.message[j] = copy;
-                //         }
-                //     }
-                // }
                 data.message.sort((a: TaskList, b: TaskList) => a.position - b.position);
 
                 for (const i in data.message) {
@@ -476,18 +468,25 @@ export default function Board() {
         <div>
             <div className="flex justify-center items-center p-2 border-b">
                 {boardName}
+                <div className="absolute right-2">
+                    {
+                        id &&
+                        <ElipsesMenuButton id={parseInt(id, 10)} />
+                    }
+                </div>
             </div>
+
             {/* Fix the scrollbar to be at the bottom of the screen */}
             <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 items-start h-screen">
                 {
                     taskLists.map(taskList => (
                         <div id={`tasklist-${taskList.id}`} key={taskList.id}
                             onMouseDown={(e) => { clickDownTaskList(e, taskList.id); setDraggingTaskListId(taskList.id) }} onMouseMove={moveTaskList} onMouseUp={(e) => releaseTaskList(e)} className={`relative rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2 ${draggingTaskListId === taskList.id ? 'opacity-50 z-50' : ''}`} style={position && draggingTaskListId === taskList.id ? { left: position.x, top: position.y } : {}} >
-                            <div onMouseDown={(e) => { e.stopPropagation(); }} onClick={e => { e.stopPropagation(); setOpenMenuId(taskList.id) }} className="rounded absolute top-0 right-0 w-8 h-8 flex justify-center items-center">
+                            <div onMouseDown={(e) => { e.stopPropagation(); }} onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId == null ? taskList.id : null) }} className="rounded absolute top-0 right-0 w-8 h-8 flex justify-center items-center">
                                 <FiMoreHorizontal size={16} />
 
                                 {openMenuId === taskList.id &&
-                                    <div className="border rounded text-white-500 w-70 bg-white absolute left-0 top-full z-50  "
+                                    <div className="shadow rounded text-white-500 w-70 bg-white absolute left-0 top-full z-50 "
                                         onClick={e => e.stopPropagation()}
                                     >
                                         <div className="flex justify-center py-2 font-semibold">
@@ -500,27 +499,33 @@ export default function Board() {
                                 }
                             </div>
 
-                            {
-                            editTaskListId !== taskList.id ?(
-                            <div onClick= {() => {setEditTaskListId(taskList.id)}} className=" font-semibold">
-                                {taskList.name}
-                            </div>)
-                            :(
-                            <input value={taskList.name} onChange={e => setTaskLists(prev => {
-                                
-                                const newTaskLists = prev.map((element) =>{
-                                    if (element.id === taskList.id)
-                                        element.name = e.target.value;
-                                    return element;
-                                });
-                                
-                                return newTaskLists;
-                            })} 
-                            className="rounded border p-1 bg-white">
-                            </input>
 
-                            )
-                            }
+                            {
+                                editTaskListId !== taskList.id ? (
+                                    <div onClick={() => { setEditTaskListId(taskList.id); setTaskName(taskList.name) }} className="font-semibold p-1">
+                                        {taskList.name}
+                                    </div>)
+                                    : (
+                                        <input value={taskName} 
+                                        onChange={e => setTaskName(e.target.value)} 
+                                        // onChange={e => setTaskLists(prev => {
+
+                                        //     const newTaskLists = prev.map((element) => {
+                                        //         if (element.id === taskList.id)
+                                        //             element.name = e.target.value;
+                                        //         return element;
+                                        //     });
+
+                                        //     return newTaskLists;
+                                        // })}
+                                            className="rounded p-1 bg-white font-semibold"
+                                            onKeyDown={(e) => e.key === "Enter" && editTasListName(editTaskListId)}
+                                            onBlur={() => setEditTaskListId(null)}>
+
+                                        </input>
+
+                                    )}
+
 
                             {taskList.tasks && taskList.tasks.map((task) => (
                                 <div id={`task-${task.id}`} key={task.id}>

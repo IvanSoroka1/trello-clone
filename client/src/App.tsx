@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Register from './pages/Register';
 import Verify from './pages/Verify';
 import Dashboard  from './pages/Dashboard';
-import Board from './pages/Board';
+import Board from './pages/Board/Board';
 
 
 function App() {

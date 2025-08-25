@@ -282,3 +282,9 @@
 /app/obj/Debug/net9.0/server.pdb
 /app/obj/Debug/net9.0/server.genruntimeconfig.cache
 /app/obj/Debug/net9.0/ref/server.dll
+/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/publish/web.config
+/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/publish/appsettings.Development.json
+/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/publish/appsettings.json
+/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/publish/server.deps.json
+/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/publish/server.runtimeconfig.json
+/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/publish/server.staticwebassets.endpoints.json
