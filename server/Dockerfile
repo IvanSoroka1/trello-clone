@@ -19,6 +19,7 @@ WORKDIR /app/publish
 
 ENV ASPNETCORE_URLS=http://+:5000
 
+#RUN dotnet ef database update --no-build --project /app
 # Expose the port your backend uses
 EXPOSE 5000
 
