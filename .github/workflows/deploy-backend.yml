@@ -1,0 +1,28 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main  # deploy when code is pushed to main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Check out your repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ SSH into your server and run the deploy script
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          key_format: pem
+          host: ${{ secrets.SERVER_HOST }}        # e.g., your EC2 IP
+          username: ${{ secrets.SERVER_USER }}    # e.g., ec2-user
+          key: ${{ secrets.SERVER_SSH_KEY }}      # private SSH key stored in GitHub Secrets
+          script: |
+            cd /home/ec2-user/trello-clone  # where deploy.sh lives
+            git pull origin main                   # optional: pull latest code
+            ./deploy.sh                     # run your script
