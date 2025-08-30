@@ -6,7 +6,7 @@ function NameAndInput({name, value, setter, type} : {name:string, value:string, 
             <input
                 type={type}
                 value={value}
-                className="border rounded bg-white px-1"
+                className="border rounded bg-white px-1 inline-block"
                 onChange={(e) => { setter(e.target.value) }}
             >
             </input>

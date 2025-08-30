@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
-import  NameAndInput  from "../components/NameAndInput";
+import NameAndInput from "../components/NameAndInput";
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [loginError, setLoginError] = useState(false);
+    const [loginError, setLoginError] = useState<string | null>(null);
 
     const navigate = useNavigate();
 
@@ -22,18 +22,14 @@ function Login() {
                     email: email,
                     password: password,
                 }),
-                credentials:"include"
+                credentials: "include"
             })
-
-            if (!response.ok) {
-                setLoginError(true);
-            }
-            else{
-                console.log("Login successful: ");
+            const data = await response.json();
+            if (data.message) {
+                setLoginError(data.message);
+            } else {
                 navigate("/dashboard");
             }
-
-            
 
         }
         catch (err) {
@@ -47,13 +43,14 @@ function Login() {
             <div className="text-6xl text-bold mb-16">
                 Task Managing App
             </div>
-            <form onSubmit={handleSubmit} className="flex flex-col">
+            <form onSubmit={handleSubmit} className="flex flex-col items-start">
                 <NameAndInput type="email" name="Email" value={email} setter={setEmail} />
-
                 <NameAndInput type="password" name="Password" value={password} setter={setPassword} />
-                <div>
-                    {loginError && <p className="text-red-500">Invalid Username or Password</p>}
-                </div>
+                {loginError && (
+                    <p className="text-red-500 whitespace-normal break-words">
+                        {loginError}
+                    </p>
+                )}
                 <div className="flex mt-6">
                     <button className="border rounded hover:bg-gray-100 transition-colors duration-200 cursor-pointer px-4">
                         Login

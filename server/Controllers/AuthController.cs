@@ -31,32 +31,26 @@ public class AuthController : ControllerBase
     public IActionResult Login([FromBody] LoginRequest request)
     {
         var user = _context.Users.FirstOrDefault(u => u.Email == request.Email);
+        if (user == null)
+            return BadRequest(new { message = "No account with such an email exists." });
+        if (user.Verified == false)
+            return BadRequest(new { message = "Please verify your email." });
+        if (user.PasswordHash != request.Password)
+            return BadRequest(new { message = "Incorrect password." });
 
+        var token = GenerateJwtToken(user.Email);
 
-        if (user != null && user.PasswordHash == request.Password)
+        var cookieOptions = new CookieOptions
         {
-            if(user.Verified == false)
-                return BadRequest(new { message = "Please verify your email first" });
-                
-            var token = GenerateJwtToken(user.Email);
+            HttpOnly = true,
+            Secure = false, // only over HTTPS
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTime.UtcNow.AddHours(1),
+        };
 
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = false, // only over HTTPS
-                SameSite = SameSiteMode.Lax,
-                Expires = DateTime.UtcNow.AddHours(1),
-                //Path = "/"
-            };
+        Response.Cookies.Append("jwt", token, cookieOptions);
 
-            Response.Cookies.Append("jwt", token, cookieOptions);
-
-            return Ok(new { message = "Login Successful" });
-        }
-
-        
-
-        return Unauthorized(new { message = "Invalid credentials" });
+        return Ok(new {});
     }
 
     [HttpPost("register")]
@@ -67,7 +61,7 @@ public class AuthController : ControllerBase
         var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
 
         if (existingUser != null)
-            return BadRequest(new { message = "email already in use" });
+            return BadRequest(new { message = "EMAIL_EXISTS" });
 
         var Token = GenerateJwtToken(request.Email);
 
@@ -124,7 +118,7 @@ public class AuthController : ControllerBase
         Console.WriteLine("Verifying Token");
         var email = ValidateVerificationToken(request.Token);
 
-        if(email == null)
+        if (email == null)
             return BadRequest(new { message = "Invalid Token" });
 
         var existingUser = _context.Users.FirstOrDefault(u => u.Email == email);
