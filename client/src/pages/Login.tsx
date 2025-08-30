@@ -5,6 +5,8 @@ import  NameAndInput  from "../components/NameAndInput";
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loginError, setLoginError] = useState(false);
+
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -24,7 +26,7 @@ function Login() {
             })
 
             if (!response.ok) {
-                console.log("Login Failed: ");
+                setLoginError(true);
             }
             else{
                 console.log("Login successful: ");
@@ -45,12 +47,14 @@ function Login() {
             <div className="text-6xl text-bold mb-16">
                 Task Managing App
             </div>
-            <form onSubmit={handleSubmit} className="flex flex-col gap">
+            <form onSubmit={handleSubmit} className="flex flex-col">
                 <NameAndInput type="email" name="Email" value={email} setter={setEmail} />
 
                 <NameAndInput type="password" name="Password" value={password} setter={setPassword} />
-
-                <div className="flex mt-6 gap-2">
+                <div>
+                    {loginError && <p className="text-red-500">Invalid Username or Password</p>}
+                </div>
+                <div className="flex mt-6">
                     <button className="border rounded hover:bg-gray-100 transition-colors duration-200 cursor-pointer px-4">
                         Login
                     </button>
@@ -62,7 +66,6 @@ function Login() {
                         Register
                     </Link>
                 </div>
-
             </form>
         </div>
     )
