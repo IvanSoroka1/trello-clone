@@ -288,3 +288,4 @@
 /Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/publish/server.deps.json
 /Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/publish/server.runtimeconfig.json
 /Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/publish/server.staticwebassets.endpoints.json
+/Users/lubomyrsoroka/Desktop/Projects/Trello Clone/trello-clone/server/bin/Debug/net9.0/BCrypt.Net-Next.dll

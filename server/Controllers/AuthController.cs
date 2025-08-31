@@ -15,6 +15,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
 namespace TaskManagerAPI.Controllers;
 
+using BCrypt.Net;
+using Npgsql.Replication;
+
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
@@ -35,7 +38,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "No account with such an email exists." });
         if (user.Verified == false)
             return BadRequest(new { message = "Please verify your email." });
-        if (user.PasswordHash != request.Password)
+        if (BCrypt.Verify(request.Password, user.PasswordHash) == false)
             return BadRequest(new { message = "Incorrect password." });
 
         var token = GenerateJwtToken(user.Email);
@@ -50,7 +53,7 @@ public class AuthController : ControllerBase
 
         Response.Cookies.Append("jwt", token, cookieOptions);
 
-        return Ok(new {});
+        return Ok(new { });
     }
 
     [HttpPost("register")]
@@ -68,7 +71,7 @@ public class AuthController : ControllerBase
         var newUser = new User
         {
             Email = request.Email,
-            PasswordHash = request.Password,
+            PasswordHash = BCrypt.HashPassword(request.Password),
             Verified = false
         };
 
@@ -78,7 +81,11 @@ public class AuthController : ControllerBase
 
         string myEmail = "l.soroka333@gmail.com";
         string password = "qofp wbvs bxqg dfqr ";
+#if RELEASE
         string websiteName = "http://18.219.52.3";
+#else
+        string websiteName = "http://localhost:5173";
+#endif
 
         Console.WriteLine($"Attempting to send Email to {request.Email}");
         try
@@ -196,8 +203,6 @@ public class AuthController : ControllerBase
             return null;
         }
     }
-
-
 }
 
 public class LoginRequest
