@@ -1,9 +1,9 @@
 import { useState } from "react";
-import type { TaskList } from "./Board.tsx";
-import { AutoResizeTextarea } from "./Board.tsx";
+import type { TaskList } from "./TaskList.tsx";
+import { AutoResizeTextarea } from "../../components/AutoResizeTextArea.tsx";
 
 export default function EditTaskListName({boardId, taskList, editTaskListId, setEditTaskListId, setTaskLists}: {
-    boardId: string,
+    boardId: number,
     taskList: TaskList,
     editTaskListId: number|null,
     setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>>,
@@ -46,7 +46,7 @@ export default function EditTaskListName({boardId, taskList, editTaskListId, set
         }
     }
         return (editTaskListId !== taskList.id ? (
-            <div onMouseDown= {(e) => { e.stopPropagation() }} onClick={() => { setEditTaskListId(taskList.id); setTaskName(taskList.name) }} className="whitespace-normal break-all font-semibold p-1">
+            <div className="drag-handle whitespace-normal break-all font-semibold p-1 w-full">
                 {taskList.name}
             </div>)
             : (

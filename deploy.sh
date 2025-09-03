@@ -3,9 +3,10 @@ set -e
 
 cd /home/ec2-user/trello-clone
 
-# Pull latest changes
-git fetch --all
-git reset --hard origin/main  # or whatever branch you deploy
+# Ensure we're on main and reset to remote
+git fetch origin main
+git checkout main
+git reset --hard origin/main   # force local branch to match remote
 
 # Build frontend
 cd client   # adjust if needed
@@ -23,10 +24,10 @@ echo "Building Docker image..."
 docker build -t my-backend ../server
 
 echo "Stopping old container..."
-docker stop backend
+docker stop backend || true
 
 echo "Removing old container..."
-docker rm backend
+docker rm backend || true
 
 echo "Starting new container..."
 docker run -d -p 5000:5000 --name backend my-backend
