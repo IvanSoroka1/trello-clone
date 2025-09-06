@@ -3,6 +3,7 @@ using server.Data; // your DbContext namespace
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +20,17 @@ builder.Services.AddCors(options =>
         });
 });
 
-string myKey = "this_is_a_very_secure_and_long_secret_key!";
+// Load environment variables from .env
+Env.Load();
+
+// Read secrets from environment variables
+builder.Configuration.AddEnvironmentVariables();
+var jwtSecret = builder.Configuration["JWT_SECRET"];
+var emailPassword= builder.Configuration["EMAIL_PASSWORD"];
+var email = builder.Configuration["EMAIL"];
+
+// Optionally register a service to provide them
+builder.Services.AddSingleton(new SecretsService(jwtSecret, emailPassword, email));
 
 builder.Services.AddAuthentication(options =>
 {
@@ -49,15 +60,19 @@ builder.Services.AddAuthentication(options =>
 
         ValidIssuer = "task-manager-app",
         ValidAudience = "task-manager-app",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(myKey))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
     };
 });
+var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
 
 // Add DbContext to DI container with connection string
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IBoardService, BoardService>();
+
+
+
 
 builder.Services.AddControllers();
 var app = builder.Build();

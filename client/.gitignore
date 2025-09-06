@@ -25,3 +25,4 @@ dist-ssr
 
 ../server/bin
 ../server/obj
+../server/.env

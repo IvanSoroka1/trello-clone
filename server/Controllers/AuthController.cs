@@ -23,10 +23,12 @@ using Npgsql.Replication;
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly SecretsService _secrets;
 
 
-    public AuthController(AppDbContext context)
+    public AuthController(AppDbContext context, SecretsService secrets)
     {
+        _secrets = secrets;
         _context = context;
     }
 
@@ -79,13 +81,14 @@ public class AuthController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        string myEmail = "l.soroka333@gmail.com";
-        string password = "qofp wbvs bxqg dfqr ";
-#if RELEASE
-        string websiteName = "http://18.219.52.3";
-#else
-        string websiteName = "http://localhost:5173";
-#endif
+        string myEmail = _secrets.PersonalEmail;
+        string password = _secrets.EmailPassword;
+
+        #if RELEASE
+                string websiteName = "http://18.219.52.3";
+        #else
+                string websiteName = "http://localhost:5173";
+        #endif
 
         Console.WriteLine($"Attempting to send Email to {request.Email}");
         try
@@ -144,9 +147,9 @@ public class AuthController : ControllerBase
         return Ok(new { message = "You have succesfully registered!" });
     }
 
-    private string myKey = "this_is_a_very_secure_and_long_secret_key!";
     private string GenerateJwtToken(string email)
     {
+        string myKey = _secrets.JwtSecret;
         // Your secret key — keep this in config or environment variables for real apps
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(myKey));
 
@@ -174,6 +177,7 @@ public class AuthController : ControllerBase
 
     private string ValidateVerificationToken(string token)
     {
+        string myKey = _secrets.JwtSecret;
         Console.WriteLine(token);
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(myKey));

@@ -12,10 +12,5 @@ namespace server.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
-
-       // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-       // {
-       //     optionsBuilder.UseNpgsql("Host=database-1.cfg48kwk6vtl.us-east-2.rds.amazonaws.com;Port=5432;Database=postgres;Username=postgres;Password=ulBalYQ29Rbh3Zdi0CXU");
-       // }
     }
 }
