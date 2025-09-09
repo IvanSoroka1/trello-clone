@@ -1,12 +1,14 @@
+import {fetchWithRefresh} from "../Refresh.tsx";
 import { useState } from "react";
 import { IoMailUnreadOutline } from "react-icons/io5";
-import NameAndInput from "../components/NameAndInput";
+import NameAndInput from "../components/NameAndInput.tsx";
+import { useNavigate } from "react-router-dom";
 
 function Register() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const [usedEmail, setUsedEmail] = useState(false);
     const [showMessage, setShowMessage] = useState(false);
-
+    const navigate = useNavigate();
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         console.log("Attempting to register with the following email: ", email);
@@ -14,10 +16,9 @@ function Register() {
             return;
         if (!emailRegex.test(email))
             return;
-
         try {
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`,
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/auth/register`,
                 {
                     method: "POST",
                     headers: {
@@ -27,7 +28,7 @@ function Register() {
                         Password: password,
                         Email: email
                     })
-                }
+                }, navigate
             );
             const data = await response.json();
             if (data.message == "EMAIL_EXISTS")

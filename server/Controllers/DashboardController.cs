@@ -23,9 +23,6 @@ public class DashboardController : ControllerBase
     public IActionResult GetBoards()
     {
 
-        // if (!User.Identity.IsAuthenticated) this is not necessary since the class is preceded by [Authorize]
-        //     return BadRequest(new { message = "Not Authenticated" });
-
         var email = User.FindFirst(ClaimTypes.Email)?.Value;
 
         if (email == null)

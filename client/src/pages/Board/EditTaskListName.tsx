@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { TaskList } from "./TaskList.tsx";
+import {fetchWithRefresh} from "../../Refresh.tsx";
 import { AutoResizeTextarea } from "../../components/AutoResizeTextArea.tsx";
+import { useNavigate } from "react-router-dom";
 
 export default function EditTaskListName({boardId, taskList, editTaskListId, setEditTaskListId, setTaskLists}: {
     boardId: number,
@@ -9,11 +11,12 @@ export default function EditTaskListName({boardId, taskList, editTaskListId, set
     setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>>,
     setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>
 }) {
+    const navigate = useNavigate();
     const [taskName, setTaskName] = useState(taskList.name);
     const editTaskListName = async () => {
         try {
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/edittasklist`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/edittasklist`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -24,7 +27,7 @@ export default function EditTaskListName({boardId, taskList, editTaskListId, set
                     BoardId: boardId
                 }),
                 credentials: "include"
-            });
+            }, navigate);
 
             if (!response.ok)
                 throw (response.status);

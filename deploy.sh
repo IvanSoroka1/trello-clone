@@ -30,6 +30,6 @@ echo "Removing old container..."
 docker rm backend || true
 
 echo "Starting new container..."
-docker run --env-file backend.env -d -p 5000:5000 --name backend my-backend
+docker run --env-file ~/backend.env -d -p 5000:5000 --name backend my-backend
 
 echo "Deployment complete!"

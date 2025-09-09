@@ -1,3 +1,4 @@
+import {fetchWithRefresh} from "../../Refresh.tsx";
 import { useEffect, useState } from "react";
 import TaskListCard from "./TaskList.tsx";
 import type { TaskList } from "./TaskList.tsx";
@@ -15,12 +16,12 @@ function initBoard(id: string | undefined, navigate: any) {
                 return;
             }
 
-            fetch(`${import.meta.env.VITE_API_URL}/api/tasks/tasklists/${id}`, {
+            fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/tasklists/${id}`, {
                 method: "GET",
                 credentials: "include"
 
-            }).then(async (response) => {
-                if (!response.ok) { // but couldn't it go wrong for a reason other than not being logged in?
+            }, navigate).then(async (response) => {
+                if (!response.ok && response.status !== 401) { // but couldn't it go wrong for a reason other than not being logged in?
                     navigate("/");
                     return;
                 }

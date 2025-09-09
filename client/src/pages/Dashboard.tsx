@@ -1,7 +1,8 @@
+import {fetchWithRefresh} from "../Refresh.tsx";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
-import NameAndInput from "../components/NameAndInput";
+import NameAndInput from "../components/NameAndInput.tsx";
 
 interface Board {
     id: number,
@@ -15,13 +16,13 @@ export default function Dashboard() {
 
     useEffect(() => {
         try {
-            fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/boards`,
+            fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/dashboard/boards`,
                 {
                     method: "GET",
                     credentials: "include"
-                }
+                }, navigate
             ).then(async response => {
-                if (!response.ok) {
+                if (!response.ok && response.status !== 401) {
                     navigate("/");
                     return;
                 }
@@ -42,7 +43,7 @@ export default function Dashboard() {
 
     const createBoard = async () => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/board`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/dashboard/board`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -50,8 +51,8 @@ export default function Dashboard() {
                 body: JSON.stringify({
                     Title: name
                 }),
-                credentials: "include"
-            });
+                credentials: "include" 
+            }, navigate);
 
             const data = await response.json();
             if (!response.ok)

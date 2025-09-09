@@ -1,3 +1,4 @@
+import { fetchWithRefresh } from "../../Refresh.tsx";
 import { X } from "lucide-react";
 import type { Task } from "./Task.tsx";
 import { useState } from "react";
@@ -5,8 +6,9 @@ import { TaskCard } from "./Task.tsx";
 import { AddNewTask } from "./Task.tsx";
 import { NameAndInputPreview } from "../../components/NameAndInput.tsx";
 import { FiMoreHorizontal } from "react-icons/fi";
-import { DraggableTaskList} from "./Drag.tsx";
+import { DraggableTaskList } from "./Drag.tsx";
 import EditTaskListName from "./EditTaskListName.tsx";
+import { useNavigate } from "react-router-dom";
 
 export interface TaskList {
     id: number;
@@ -24,10 +26,10 @@ type ApiFunctions = {
     editTaskListPosition: EditTaskListPositionFn;
 };
 
-export function setUpApiTaskList(id: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, functionNames: string[]): Partial<ApiFunctions> {
+export function setUpApiTaskList(id: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, functionNames: string[], navigate: any): Partial<ApiFunctions> {
     const newTaskList = async (listName: string) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/maketasklist`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/maketasklist`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -37,7 +39,7 @@ export function setUpApiTaskList(id: number, setTaskLists: React.Dispatch<React.
                     BoardId: id
                 }),
                 credentials: "include"
-            });
+            }, navigate);
             const data = await response.json();
             if (!response.ok)
                 throw (data.message);
@@ -57,7 +59,7 @@ export function setUpApiTaskList(id: number, setTaskLists: React.Dispatch<React.
         try {
             if (openMenuId === null) return; // No task list is selected
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/deletetasklist`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/deletetasklist`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json"
@@ -67,7 +69,7 @@ export function setUpApiTaskList(id: number, setTaskLists: React.Dispatch<React.
                     BoardId: id
                 }),
                 credentials: "include"
-            });
+            }, navigate);
             const data = await response.json();
             if (!response.ok)
                 throw (data.message);
@@ -80,7 +82,7 @@ export function setUpApiTaskList(id: number, setTaskLists: React.Dispatch<React.
 
     const editTaskListPosition = async (index1: number, index2: number) => { // should be renamed swapTaskLists
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/edittasklistposition`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/edittasklistposition`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -91,10 +93,16 @@ export function setUpApiTaskList(id: number, setTaskLists: React.Dispatch<React.
                     BoardId: id
                 }),
                 credentials: "include"
-            });
-            const data = await response.json();
-            if (!response.ok)
-                throw (data.message);
+            }, navigate);
+            let data;
+            const text = await response.text();
+            try {
+                data = text ? JSON.parse(text) : null;
+            } catch (e) {
+                console.error("Failed to parse JSON:", text, e);
+            }
+
+            if (!response.ok) throw (data?.message || response.statusText);
 
         } catch (e) {
             console.log(e);
@@ -115,7 +123,7 @@ export function setUpApiTaskList(id: number, setTaskLists: React.Dispatch<React.
 export function AddNewList({ boardId, setTaskLists }: { boardId: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>> }) {
     const [listName, setListName] = useState('');
     const [createListPrompt, setCreateListPrompt] = useState(false); // could this create a problem of multiple prompts?
-    const { newTaskList } = setUpApiTaskList(boardId, setTaskLists, ['newTaskList']);
+    const { newTaskList } = setUpApiTaskList(boardId, setTaskLists, ['newTaskList'], useNavigate());
     return (
         !createListPrompt ?
             <button onClick={() => setCreateListPrompt(true)} className="py-2 justify-center shadow-lg items-center order rounded w-60 flex-none">+ Create a new list</button>
@@ -135,7 +143,7 @@ export function AddNewList({ boardId, setTaskLists }: { boardId: number, setTask
 }
 function TaskListMenu({ taskList, boardId, setTaskLists }: { taskList: TaskList, boardId: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>> }) {
 
-    const { deleteTaskList } = setUpApiTaskList(boardId, setTaskLists, ['deleteTaskList']);
+    const { deleteTaskList } = setUpApiTaskList(boardId, setTaskLists, ['deleteTaskList'], useNavigate());
     const [openMenuId, setOpenMenuId] = useState<number | null>(null); // could this allow more than one menu open at once? Wouldn't want that.
 
     return (
@@ -158,7 +166,7 @@ function TaskListMenu({ taskList, boardId, setTaskLists }: { taskList: TaskList,
     )
 }
 
-export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEditTaskId, BoardId: boardId, editTaskListId, setEditTaskListId, enterTaskListId, setEnterTaskListId, taskLists }: { taskList: TaskList, editTaskId: number | null, setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, BoardId: number, enterTaskListId: number | null, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, taskLists: TaskList[], editTaskListId: number | null, setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>>}) {
+export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEditTaskId, BoardId: boardId, editTaskListId, setEditTaskListId, enterTaskListId, setEnterTaskListId, taskLists }: { taskList: TaskList, editTaskId: number | null, setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, BoardId: number, enterTaskListId: number | null, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, taskLists: TaskList[], editTaskListId: number | null, setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>> }) {
 
     return (
         <DraggableTaskList setEditTaskListId={setEditTaskListId} setTaskLists={setTaskLists} boardId={boardId} taskLists={taskLists} element={taskList}>
@@ -168,7 +176,7 @@ export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEd
             </div>
             {taskList.tasks && taskList.tasks.map((task: Task) => (
                 <div id={`task-${task.id}`} key={task.id}>
-                    <TaskCard task={task} taskList={taskList} setTaskLists={setTaskLists} setEditTaskId={setEditTaskId} id={boardId} taskLists={taskLists} editTaskId={editTaskId}  />
+                    <TaskCard task={task} taskList={taskList} setTaskLists={setTaskLists} setEditTaskId={setEditTaskId} id={boardId} taskLists={taskLists} editTaskId={editTaskId} />
                 </div>
             )
             )

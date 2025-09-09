@@ -1,19 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
-import NameAndInput from "../components/NameAndInput";
+import NameAndInput from "../components/NameAndInput.tsx";
+import { fetchWithRefresh } from "../Refresh.tsx";
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loginError, setLoginError] = useState<string | null>(null);
-
     const navigate = useNavigate();
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         console.log('Login Attempt', email, password)
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -23,7 +24,7 @@ function Login() {
                     password: password,
                 }),
                 credentials: "include"
-            })
+            }, navigate)
             const data = await response.json();
             if (data.message) {
                 setLoginError(data.message);
@@ -37,6 +38,22 @@ function Login() {
         }
     };
 
+    useEffect(() => {
+        try {
+            const response = fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
+                method: "GET",
+                credentials: "include"
+            });
+            response.then(async (res) => {
+                const data = await res.json();
+                if (data.email) {
+                    navigate("/dashboard");
+                }
+            })
+        } catch (e) {
+            console.log("Error: ", e);
+        }
+    });
 
     return (
         <div className="flex flex-col justify-center min-h-screen items-center">

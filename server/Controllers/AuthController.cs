@@ -15,7 +15,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
 namespace TaskManagerAPI.Controllers;
 
+using System.Security.Cryptography;
 using BCrypt.Net;
+using Microsoft.AspNetCore.Identity.Data;
 using Npgsql.Replication;
 
 [ApiController]
@@ -24,12 +26,25 @@ public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly SecretsService _secrets;
+    private readonly int _accessTokenExpirationMinutes = 15;
+    private readonly int _refreshTokenExpirationDays = 7;
 
 
     public AuthController(AppDbContext context, SecretsService secrets)
     {
         _secrets = secrets;
         _context = context;
+    }
+    [HttpGet("me")]
+    public IActionResult Me()
+    {
+        var refreshToken = Request.Cookies["refreshToken"];
+        if (refreshToken == null)
+            return Unauthorized();
+        string? email = ValidateRefreshToken(refreshToken);
+        if (email == null)
+            return Unauthorized();
+        return Ok(new {Email = email});
     }
 
     [HttpPost("login")]
@@ -43,19 +58,56 @@ public class AuthController : ControllerBase
         if (BCrypt.Verify(request.Password, user.PasswordHash) == false)
             return BadRequest(new { message = "Incorrect password." });
 
-        var token = GenerateJwtToken(user.Email);
+        var accessToken = GenerateJwtToken(user.Email);
 
-        var cookieOptions = new CookieOptions
+        var refreshToken = GenerateRefreshToken();
+        var existingRefreshToken = _context.RefreshTokens.FirstOrDefault(rt => rt.Email == request.Email);
+        if (existingRefreshToken != null)
+        {
+            existingRefreshToken.Token = refreshToken;
+            existingRefreshToken.Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays);
+        }
+        else
+        {
+            _context.RefreshTokens.Add(new RefreshToken
+            {
+                Email = request.Email,
+                Token = refreshToken,
+                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays),
+                Revoked = false
+            });
+        }
+        _context.SaveChanges();
+
+
+        Response.Cookies.Append("accessToken", accessToken, new CookieOptions
         {
             HttpOnly = true,
             Secure = false, // only over HTTPS
             SameSite = SameSiteMode.Lax,
-            Expires = DateTime.UtcNow.AddHours(1),
-        };
+            Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes),
+        });
 
-        Response.Cookies.Append("jwt", token, cookieOptions);
+        Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            SameSite = SameSiteMode.Lax,
+            Secure = false,
+            Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
+        });
+
 
         return Ok(new { });
+    }
+
+    private string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[32];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
     }
 
     [HttpPost("register")]
@@ -85,7 +137,7 @@ public class AuthController : ControllerBase
         string password = _secrets.EmailPassword;
 
         #if RELEASE
-                string websiteName = "http://18.219.52.3";
+                        string websiteName = "http://18.219.52.3";
         #else
                 string websiteName = "http://localhost:5173";
         #endif
@@ -168,7 +220,7 @@ public class AuthController : ControllerBase
             issuer: "task-manager-app",
             audience: "task-manager-app",
             claims: claims,
-            expires: DateTime.Now.AddHours(1),
+            expires: DateTime.Now.AddMinutes(_accessTokenExpirationMinutes), // for testing puposes only
             signingCredentials: creds
         );
 
@@ -178,7 +230,6 @@ public class AuthController : ControllerBase
     private string ValidateVerificationToken(string token)
     {
         string myKey = _secrets.JwtSecret;
-        Console.WriteLine(token);
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(myKey));
 
@@ -207,20 +258,59 @@ public class AuthController : ControllerBase
             return null;
         }
     }
-}
 
-public class LoginRequest
-{
-    public string Email { get; set; }
-    public string Password { get; set; }
-}
-public class RegisterRequest
-{
-    public string Email { get; set; }
-    public string Password { get; set; }
-}
+    [HttpPost("refresh")]
+    public IActionResult Refresh()
+    {
+        var refreshToken = Request.Cookies["refreshToken"];
+        if (refreshToken == null)
+            return Unauthorized();
+        string? email = ValidateRefreshToken(refreshToken);
+        if (email == null)
+            return Unauthorized();
 
-public class VerifyRequest
-{
-    public string Token { get; set; }
+        var newJwt = GenerateJwtToken(email);
+        Response.Cookies.Append("accessToken", newJwt, new CookieOptions
+        {
+            HttpOnly = true,
+            SameSite = SameSiteMode.None,
+            Secure = true,
+            Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
+        });
+
+        return Ok();
+    }
+
+    private string? ValidateRefreshToken(string refreshToken)
+    {
+        var tokenRecord = _context.RefreshTokens
+                .FirstOrDefault(rt => rt.Token == refreshToken);
+
+        if (tokenRecord == null)
+            return null; // not found
+
+        if (tokenRecord.Expires < DateTime.UtcNow)
+            return null; // expired
+
+        if (tokenRecord.Revoked)
+            return null; // explicitly revoked (e.g., logout)
+
+        return tokenRecord.Email;
+    }
+
+    public class LoginRequest
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+    public class RegisterRequest
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
+    public class VerifyRequest
+    {
+        public string Token { get; set; }
+    }
 }
