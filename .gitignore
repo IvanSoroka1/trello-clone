@@ -1,13 +1,14 @@
 # dependencies
-node_modules/
+client/node_modules/
 
 # build output
-dist/
+client/dist/
 
 client/src_backup/
 
 # local env files
-.env
+client/.env
+server/.env
 .env.local
 
 # logs
@@ -18,3 +19,6 @@ yarn-error.log*
 # OS-specific stuff
 .DS_Store
 Thumbs.db
+
+server/bin
+server/obj
