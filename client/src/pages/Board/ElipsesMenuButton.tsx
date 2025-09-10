@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-
+import {fetchWithRefresh} from "../../Refresh.tsx";
 
 
 export default function ElipsesMenuButton({ id }: { id: number }) {
@@ -20,7 +20,7 @@ export default function ElipsesMenuButton({ id }: { id: number }) {
 
     const deleteBoard = async () => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/board`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/dashboard/board`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json"
@@ -29,7 +29,7 @@ export default function ElipsesMenuButton({ id }: { id: number }) {
                     BoardId: id
                 }),
                 credentials: "include"
-            });
+            }, navigate);
 
             if (!response.ok)
                 throw Error("bad request");

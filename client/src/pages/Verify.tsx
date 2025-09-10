@@ -1,16 +1,17 @@
 
+import {fetchWithRefresh} from "../Refresh.tsx";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 function Verify() {
     const [verificationStatus, setVerificationStatus] = useState("Verifying your account...");
     const [searchParams] = useSearchParams();
     const token = searchParams.get("token");
+    const navigate = useNavigate();
     //const verificationStatus = false;
-
     useEffect(() => {
         try {
-            fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify`,
+            fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/auth/verify`,
                 {
                     method: "POST",
                     headers: {
@@ -19,7 +20,7 @@ function Verify() {
                     body: JSON.stringify({
                         token: token 
                     })
-                }
+                }, navigate
             ).then(async (response) => {
                 const data = await response.json();
                 if (!response.ok)

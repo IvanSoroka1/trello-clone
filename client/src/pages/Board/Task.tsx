@@ -1,3 +1,4 @@
+import { fetchWithRefresh } from "../../Refresh.tsx";
 import { FaCheck } from "react-icons/fa";
 import { X } from "lucide-react";
 import { AutoResizeTextarea } from "../../components/AutoResizeTextArea.tsx";
@@ -11,6 +12,7 @@ export interface Task {
 }
 import { useState } from "react";
 import type { TaskList } from "./TaskList.tsx"
+import { useNavigate } from "react-router-dom";
 
 
 //export function useNewTask({setTaskLists, setEnterTaskListId, setTaskName, id} : {setTaskLists:React.Dispatch<React.SetStateAction<TaskList[]>>, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, setTaskName: React.Dispatch<React.SetStateAction<string>>, id: number }) {
@@ -30,12 +32,13 @@ type ApiFunctions = {
     editTaskPosition: EditTaskPositionFn;
 };
 
-export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, functionNames: string[]): Partial<ApiFunctions> {
+export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, functionNames: string[], navigate: any): Partial<ApiFunctions> {
+
     const newTask = async (enterTaskListId: number, taskName: string) => {
         try {
             if (enterTaskListId === null) return; // No task list is selected
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/newtask`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/newtask`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -46,7 +49,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
                     BoardId: boardId
                 }),
                 credentials: "include"
-            });
+            }, navigate);
             const data = await response.json();
             if (!response.ok)
                 throw (data.message);
@@ -73,7 +76,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
         try {
             if (editTaskId === null) return; // No task list is selected
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/edittask`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/edittask`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -85,7 +88,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
                     BoardId: boardId
                 }),
                 credentials: "include"
-            });
+            }, navigate);
             const data = await response.json();
             if (!response.ok)
                 throw (data.message);
@@ -115,7 +118,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
 
     const deleteTask = async (taskId: number, taskListId: number) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/deletetask`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/deletetask`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json"
@@ -126,7 +129,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
                     BoardId: boardId
                 }),
                 credentials: "include"
-            });
+            }, navigate);
             const data = await response.json();
             if (!response.ok)
                 throw (data.message);
@@ -148,7 +151,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
 
     const insertTask = async (index: number, taskListId: number, task: Task) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/inserttask`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/inserttask`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -160,7 +163,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
                     BoardId: boardId
                 }),
                 credentials: "include"
-            });
+            }, navigate);
             const data = await response.json();
             if (!response.ok)
                 throw (data.message);
@@ -171,7 +174,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
     }
     const editTaskPosition = async (index1: number, index2: number, taskListId: number) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/edittaskposition`, {
+            const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/edittaskposition`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -183,10 +186,16 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
                     BoardId: boardId
                 }),
                 credentials: "include"
-            });
-            const data = await response.json();
-            if (!response.ok)
-                throw (data.message);
+            }, navigate);
+            let data;
+            const text = await response.text();
+            try {
+                data = text ? JSON.parse(text) : null;
+            } catch (e) {
+                console.error("Failed to parse JSON:", text, e);
+            }
+
+            if (!response.ok) throw (data?.message || response.statusText);
 
         } catch (e) {
             console.log(e);
@@ -207,11 +216,11 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
 
 function ToggleCheckIcon({ taskId, listId, boardId, completed }: { taskId: number, listId: number, boardId: number | undefined, completed: boolean }) {
     const [isChecked, setIsChecked] = useState(completed);
-
+    const navigate = useNavigate();
     const checkTask = () => {
         setIsChecked(!isChecked);
         try {
-            fetch(`${import.meta.env.VITE_API_URL}/api/tasks/togglecheck`, {
+            fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/togglecheck`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -223,7 +232,7 @@ function ToggleCheckIcon({ taskId, listId, boardId, completed }: { taskId: numbe
                     Completed: !isChecked
                 }),
                 credentials: "include"
-            });
+            }, navigate);
         } catch (e) {
             console.error("Error toggling task completion:", e);
         }
@@ -237,7 +246,7 @@ function ToggleCheckIcon({ taskId, listId, boardId, completed }: { taskId: numbe
 }
 
 export function AddNewTask({ enterTaskListId, setEnterTaskListId, taskList, boardId, setTaskLists }: { enterTaskListId: number | null, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, taskList: TaskList, boardId: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>> }) {
-    const { newTask } = setUpApiTasks(boardId, setTaskLists, ['newTask']);
+    const { newTask } = setUpApiTasks(boardId, setTaskLists, ['newTask'], useNavigate());
     const [taskName, setTaskName] = useState('');
     return (
         enterTaskListId !== taskList.id ?
@@ -247,7 +256,7 @@ export function AddNewTask({ enterTaskListId, setEnterTaskListId, taskList, boar
 
             :
             <div className="mt-2">
-                <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={() => {newTask?.(taskList.id, taskName); setEnterTaskListId(null); setTaskName(""); }} setId={undefined} bold={false} />
+                <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={() => { newTask?.(taskList.id, taskName); setEnterTaskListId(null); setTaskName(""); }} setId={undefined} bold={false} />
                 <div className="flex gap-2 mt-2">
                     <button onClick={() => { newTask?.(taskList.id, taskName); setEnterTaskListId(null); setTaskName(""); }} className="border rounded p-2">Add Task +</button>
                     <button className="rounded" onClick={() => { setEnterTaskListId(null); setTaskName(""); }}><X></X></button>
@@ -257,7 +266,7 @@ export function AddNewTask({ enterTaskListId, setEnterTaskListId, taskList, boar
 }
 export function TaskCard({ task, taskList, setTaskLists, setEditTaskId, id, taskLists, editTaskId, }: { task: Task, taskList: TaskList, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>, id: number, taskLists: TaskList[], editTaskId: number | null }) {
 
-    const { deleteTask, editTaskName } = setUpApiTasks(id, setTaskLists, ['deleteTask', 'editTaskName']);
+    const { deleteTask, editTaskName } = setUpApiTasks(id, setTaskLists, ['deleteTask', 'editTaskName'], useNavigate());
     const [taskName, setTaskName] = useState(task.name);
 
     return (

@@ -6,6 +6,7 @@ import { type Task } from "./Task.tsx";
 import { setUpApiTasks } from "./Task.tsx";
 import { setUpApiTaskList } from "./TaskList.tsx"
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 export function DraggableTaskList({
     setTaskLists,
@@ -28,6 +29,7 @@ export function DraggableTaskList({
     const originalPositionRef = useRef<{ x: number; y: number } | null>(null);
     const elementRef = useRef<HTMLDivElement | null>(null);
     const clickedHandleRef = useRef<boolean>(false);
+    const navigate = useNavigate();
 
     const clickDownElement = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!(e.target as HTMLElement).closest(".drag-handle")) {
@@ -72,7 +74,7 @@ export function DraggableTaskList({
         }
 
 
-        const { editTaskListPosition } = setUpApiTaskList(boardId, setTaskLists, ["editTaskListPosition"]);
+        const { editTaskListPosition } = setUpApiTaskList(boardId, setTaskLists, ["editTaskListPosition"], navigate);
         // Smoothly reset transform
         if (elementRef.current) {
             // elementRef.current.style.transition = "transform 150ms ease"; this can create a problem when you drag to another task list and was deleted for task dragging as well (it does the animation from some random place.) Although it looks nice when you do an invalid drag.
@@ -171,6 +173,7 @@ export function DraggableTask({
     const positionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
     const originalPositionRef = useRef<{ x: number; y: number } | null>(null);
     const frameRef = useRef<number | null>(null);
+    const navigate = useNavigate();
 
     // Pointer down: start dragging
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -255,7 +258,7 @@ export function DraggableTask({
         const index1 = targetTaskList.tasks.findIndex(t => t.id === targetId);
         const index2 = originalTaskList.tasks.findIndex(t => t.id === task.id);
 
-        const { editTaskPosition, deleteTask, insertTask } = setUpApiTasks(boardId, setTaskLists, ["editTaskPosition", "deleteTask", "insertTask"]);
+        const { editTaskPosition, deleteTask, insertTask } = setUpApiTasks(boardId, setTaskLists, ["editTaskPosition", "deleteTask", "insertTask"], navigate);
 
         if (targetTaskList === originalTaskList) {
             // Reorder within same list

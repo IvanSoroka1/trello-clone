@@ -44,7 +44,7 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = context =>
         {
-            var token = context.Request.Cookies["jwt"];
+            var token = context.Request.Cookies["accessToken"];
             if (!string.IsNullOrEmpty(token))
                 context.Token = token;
             return Task.CompletedTask;
@@ -60,7 +60,8 @@ builder.Services.AddAuthentication(options =>
 
         ValidIssuer = "task-manager-app",
         ValidAudience = "task-manager-app",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+        //ClockSkew = TimeSpan.Zero // for testing puposes only
     };
 });
 var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");

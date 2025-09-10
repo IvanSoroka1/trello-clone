@@ -7,22 +7,22 @@ WORKDIR /app
 COPY *.csproj ./
 RUN dotnet restore
 
-# Copy the rest of the code and publish
+# Copy the rest of the code
 COPY . ./
-RUN dotnet publish -c Release -o /app/publish
 
-# Install EF Core tools globally (optional, only if you need dotnet-ef inside container)
+# Install EF Core tools globally
 RUN dotnet tool install --global dotnet-ef --version 9.0.8
 ENV PATH="$PATH:/root/.dotnet/tools"
+
+# Publish the project
+RUN dotnet publish -c Release -o /app/publish
 
 WORKDIR /app/publish
 
 ENV ASPNETCORE_URLS=http://+:5000
 
-#RUN dotnet ef database update --no-build --project /app
 # Expose the port your backend uses
 EXPOSE 5000
 
-# Run your backend
-CMD ["dotnet", "server.dll"]
-
+# Run EF Core migrations first, then start the backend
+CMD dotnet ef database update --project /app --startup-project /app && dotnet server.dll

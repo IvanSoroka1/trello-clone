@@ -31,7 +31,7 @@ public class TasksController : ControllerBase
         string? message = _boardService.checkValidBoard(boardId, ref board, User);
 
         if (board == null)
-            return BadRequest(new { message = message });
+            return Forbid(message);
 
         var taskLists = board.Include(b => b.TaskLists).ThenInclude(tl => tl.Tasks).SelectMany(b => b.TaskLists).ToList();
 
