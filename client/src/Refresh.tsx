@@ -1,7 +1,6 @@
 
 export async function fetchWithRefresh(url: string, options: RequestInit = {}, navigate: any ) {
     let response = await fetch(url, options);
-
     if (response.status === 401) {
       const refreshRes = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/refresh`, {
         method: "POST",
@@ -14,7 +13,6 @@ export async function fetchWithRefresh(url: string, options: RequestInit = {}, n
         navigate("/");
       }
     }
-
     return response;
 };
   

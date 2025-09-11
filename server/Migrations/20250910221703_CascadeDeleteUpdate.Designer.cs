@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using server.Data;
@@ -11,9 +12,11 @@ using server.Data;
 namespace server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250910221703_CascadeDeleteUpdate")]
+    partial class CascadeDeleteUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,14 +88,14 @@ namespace server.Migrations
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 
-                    b.Property<int>("TaskListId")
+                    b.Property<int?>("TaskListId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TaskListId");
 
-                    b.ToTable("Tasks");
+                    b.ToTable("Task");
                 });
 
             modelBuilder.Entity("server.Models.TaskList", b =>
@@ -103,7 +106,7 @@ namespace server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("BoardId")
+                    b.Property<int?>("BoardId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")
@@ -117,7 +120,7 @@ namespace server.Migrations
 
                     b.HasIndex("BoardId");
 
-                    b.ToTable("TaskLists");
+                    b.ToTable("TaskList");
                 });
 
             modelBuilder.Entity("server.Models.User", b =>
@@ -146,24 +149,16 @@ namespace server.Migrations
 
             modelBuilder.Entity("server.Models.Task", b =>
                 {
-                    b.HasOne("server.Models.TaskList", "TaskList")
+                    b.HasOne("server.Models.TaskList", null)
                         .WithMany("Tasks")
-                        .HasForeignKey("TaskListId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("TaskList");
+                        .HasForeignKey("TaskListId");
                 });
 
             modelBuilder.Entity("server.Models.TaskList", b =>
                 {
-                    b.HasOne("server.Models.Board", "Board")
+                    b.HasOne("server.Models.Board", null)
                         .WithMany("TaskLists")
-                        .HasForeignKey("BoardId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Board");
+                        .HasForeignKey("BoardId");
                 });
 
             modelBuilder.Entity("server.Models.Board", b =>
