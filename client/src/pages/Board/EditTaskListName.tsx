@@ -53,13 +53,6 @@ export default function EditTaskListName({boardId, taskList, editTaskListId, set
                 {taskList.name}
             </div>)
             : (
-                // <input onMouseDown= {(e) => { e.stopPropagation() }} value={taskName}
-                //     onChange={e => setTaskName(e.target.value)}
-                //     className="w-6/7 rounded-lg p-1 bg-white font-semibold"
-                //     onKeyDown={(e) => e.key === "Enter" && editTaskListName()}
-                //     onBlur={() => setEditTaskListId(null)}
-                //     autoFocus>
-                // </input>
                 <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={editTaskListName} setId={setEditTaskListId} bold={true}/>
             )
         );

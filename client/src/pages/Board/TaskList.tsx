@@ -5,10 +5,10 @@ import { useState } from "react";
 import { TaskCard } from "./Task.tsx";
 import { AddNewTask } from "./Task.tsx";
 import { AutoResizeTextarea } from "../../components/AutoResizeTextArea.tsx";
-import { FiMoreHorizontal } from "react-icons/fi";
 import { DraggableTaskList } from "./Drag.tsx";
 import EditTaskListName from "./EditTaskListName.tsx";
 import { useNavigate } from "react-router-dom";
+import { TaskListMenu } from "../TaskListMenu.tsx";
 
 export interface TaskList {
     id: number;
@@ -132,7 +132,7 @@ export function AddNewList({ boardId, setTaskLists }: { boardId: number, setTask
             <div className="relative border rounded w-60 flex-none p-2">
 
                 <div className="flex justify-center">
-                    <AutoResizeTextarea taskName={listName} setTaskName={setListName} editFunction={() => { newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} setId={setCreateListPrompt}  bold ={false}/>
+                    <AutoResizeTextarea taskName={listName} setTaskName={setListName} editFunction={() => { newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} setId={setCreateListPrompt} bold={false} />
                 </div>
                 <div className="flex gap-2 mt-2">
                     <button onClick={() => { newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} className=" border rounded p-2">Add List +</button>
@@ -141,38 +141,16 @@ export function AddNewList({ boardId, setTaskLists }: { boardId: number, setTask
             </div>
     )
 }
-function TaskListMenu({ taskList, boardId, setTaskLists }: { taskList: TaskList, boardId: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>> }) {
 
-    const { deleteTaskList } = setUpApiTaskList(boardId, setTaskLists, ['deleteTaskList'], useNavigate());
-    const [openMenuId, setOpenMenuId] = useState<number | null>(null); // could this allow more than one menu open at once? Wouldn't want that.
 
-    return (
-        <div style={{ width: "1.5rem", height: "1.5rem" }} onMouseDown={(e) => { e.stopPropagation(); }} onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId == null ? taskList.id : null) }} className="relative rounded flex justify-center items-center hover:bg-gray-200">
-            <FiMoreHorizontal size={16} />
 
-            {openMenuId === taskList.id &&
-                <div className="shadow rounded text-white-500 w-70 bg-white absolute left-0 top-full z-50 "
-                    onClick={e => e.stopPropagation()}
-                >
-                    <div className="flex justify-center py-2 font-semibold">
-                        List Actions
-                    </div>
-                    <button onClick={() => deleteTaskList?.(openMenuId)} className="rounded px-2 text-red-500 flex justify-left w-full">
-                        Delete
-                    </button>
-                </div>
-            }
-        </div>
-    )
-}
-
-export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEditTaskId, BoardId: boardId, editTaskListId, setEditTaskListId, enterTaskListId, setEnterTaskListId, taskLists }: { taskList: TaskList, editTaskId: number | null, setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, BoardId: number, enterTaskListId: number | null, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, taskLists: TaskList[], editTaskListId: number | null, setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>> }) {
+export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEditTaskId, BoardId: boardId, editTaskListId, setEditTaskListId, enterTaskListId, setEnterTaskListId, openMenuId, setOpenMenuId, taskLists }: { taskList: TaskList, editTaskId: number | null, setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, BoardId: number, enterTaskListId: number | null, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, openMenuId: number | null, setOpenMenuId: React.Dispatch<React.SetStateAction<number | null>>, taskLists: TaskList[], editTaskListId: number | null, setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>> }) {
 
     return (
         <DraggableTaskList setEditTaskListId={setEditTaskListId} setTaskLists={setTaskLists} boardId={boardId} taskLists={taskLists} element={taskList}>
-            <div className="flex flex-row justify-between items-center ">
+            <div className="flex flex-row justify-between items-center">
                 <EditTaskListName boardId={boardId!} taskList={taskList} editTaskListId={editTaskListId} setEditTaskListId={setEditTaskListId} setTaskLists={setTaskLists} />
-                <TaskListMenu taskList={taskList} boardId={boardId} setTaskLists={setTaskLists} />
+                <TaskListMenu taskList={taskList} boardId={boardId} setTaskLists={setTaskLists} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} />
             </div>
             {taskList.tasks && taskList.tasks.map((task: Task) => (
                 <div id={`task-${task.id}`} key={task.id}>
