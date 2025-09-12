@@ -4,7 +4,7 @@ type AutoResizeTextareaProps<T> = {
     taskName: string;
     setTaskName: React.Dispatch<React.SetStateAction<string>>;
     editFunction: () => void;
-    setId: React.Dispatch<React.SetStateAction<T>>;
+    setId?: React.Dispatch<React.SetStateAction<T>>;
     bold: boolean;
 };
 
@@ -42,6 +42,8 @@ export function AutoResizeTextarea<T extends number | null | boolean>({
                 }
             }}
             onBlur={() => {
+                if (!setId) return;
+
                 if (typeof (false as T) === "boolean") {
                     (setId as React.Dispatch<React.SetStateAction<boolean>>)(false);
                 } else {

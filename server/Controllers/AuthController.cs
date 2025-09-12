@@ -273,9 +273,9 @@ public class AuthController : ControllerBase
         Response.Cookies.Append("accessToken", newJwt, new CookieOptions
         {
             HttpOnly = true,
-            SameSite = SameSiteMode.None,
-            Secure = true,
-            Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
+            Secure = false, // only over HTTPS
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes),
         });
 
         return Ok();
