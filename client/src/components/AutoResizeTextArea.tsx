@@ -1,18 +1,27 @@
-import { useRef, useEffect } from "react"
+import { useEffect, useRef } from "react";
 
-export function AutoResizeTextarea({ taskName, setTaskName, editFunction, setId, bold }: { taskName: string, setTaskName: React.Dispatch<React.SetStateAction<string>>, editFunction: () => void, setId: React.Dispatch<React.SetStateAction<number | null>> | undefined, bold: boolean }) {
+type AutoResizeTextareaProps<T> = {
+    taskName: string;
+    setTaskName: React.Dispatch<React.SetStateAction<string>>;
+    editFunction: () => void;
+    setId: React.Dispatch<React.SetStateAction<T>>;
+    bold: boolean;
+};
+
+export function AutoResizeTextarea<T extends number | null | boolean>({
+    taskName,
+    setTaskName,
+    editFunction,
+    setId,
+    bold
+}: AutoResizeTextareaProps<T>) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    // Adjust height on content change
     useEffect(() => {
         const el = textareaRef.current;
         if (el) {
-            // el.style.height = "auto"; // reset first
-            // const lineHeight = parseInt(getComputedStyle(el).lineHeight || "16", 10);
-            // el.style.height = `${el.scrollHeight - lineHeight}px`; // remove one line
-            //el.style.height = `${el.scrollHeight}px`; 
-            el.style.height = "0px"; // fully reset
-            el.style.height = el.scrollHeight + "px"; // fit to content
+            el.style.height = "0px";
+            el.style.height = el.scrollHeight + "px";
         }
     }, [taskName]);
 
@@ -26,13 +35,19 @@ export function AutoResizeTextarea({ taskName, setTaskName, editFunction, setId,
             className={`resize-none overflow-hidden break-all rounded p-1 bg-white shadow-lg w-full ${bold ? 'font-semibold' : ''}`}
             onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                    e.preventDefault();   // stop newline
+                    e.preventDefault();
                     editFunction();
                 } else if (e.key === "Escape") {
                     editFunction();
                 }
             }}
-            onBlur={() => setId !== null && setId !== undefined ? setId(null) : undefined}
+            onBlur={() => {
+                if (typeof (false as T) === "boolean") {
+                    (setId as React.Dispatch<React.SetStateAction<boolean>>)(false);
+                } else {
+                    (setId as React.Dispatch<React.SetStateAction<number | null>>)(null);
+                }
+            }}
             autoFocus
             placeholder="Enter Task Name..."
         />

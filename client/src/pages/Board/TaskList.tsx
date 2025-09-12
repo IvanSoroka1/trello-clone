@@ -4,7 +4,7 @@ import type { Task } from "./Task.tsx";
 import { useState } from "react";
 import { TaskCard } from "./Task.tsx";
 import { AddNewTask } from "./Task.tsx";
-import { NameAndInputPreview } from "../../components/NameAndInput.tsx";
+import { AutoResizeTextarea } from "../../components/AutoResizeTextArea.tsx";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { DraggableTaskList } from "./Drag.tsx";
 import EditTaskListName from "./EditTaskListName.tsx";
@@ -132,7 +132,7 @@ export function AddNewList({ boardId, setTaskLists }: { boardId: number, setTask
             <div className="relative border rounded w-60 flex-none p-2">
 
                 <div className="flex justify-center">
-                    <NameAndInputPreview type="name" name="Enter List Name..." value={listName} setter={setListName} ></NameAndInputPreview>
+                    <AutoResizeTextarea taskName={listName} setTaskName={setListName} editFunction={() => { newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} setId={setCreateListPrompt}  bold ={false}/>
                 </div>
                 <div className="flex gap-2 mt-2">
                     <button onClick={() => { newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} className=" border rounded p-2">Add List +</button>
