@@ -126,28 +126,29 @@ export function AddNewList({ boardId, setTaskLists }: { boardId: number, setTask
     const { newTaskList } = setUpApiTaskList(boardId, setTaskLists, ['newTaskList'], useNavigate());
     return (
         !createListPrompt ?
-            <button onClick={() => setCreateListPrompt(true)} className="py-2 justify-center shadow-lg items-center order rounded w-60 flex-none">+ Create a new list</button>
-
+            (<button onClick={() => setCreateListPrompt(true)} className="py-2 justify-center shadow-lg items-center rounded w-60 flex-none">+ Create a new list</button>)
             :
-            <div className="relative border rounded w-60 flex-none p-2">
+            (
+                <div className="relative border rounded w-60 flex-none p-2">
+                    <div className="flex justify-center">
+                        <AutoResizeTextarea taskName={listName} setTaskName={setListName} editFunction={() => { newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} setId={undefined} bold={false} />
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                        <button type = "button" onClick={(e) => {e.preventDefault(); newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} className=" border rounded p-2">Add List +</button>
+                        <button type = "button" onClick={(e) => { e.preventDefault(); setCreateListPrompt(false); setListName(""); }}><X /></button>
+                    </div>
+                </div>
+            )
 
-                <div className="flex justify-center">
-                    <AutoResizeTextarea taskName={listName} setTaskName={setListName} editFunction={() => { newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} setId={setCreateListPrompt} bold={false} />
-                </div>
-                <div className="flex gap-2 mt-2">
-                    <button onClick={() => { newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} className=" border rounded p-2">Add List +</button>
-                    <button onClick={() => { setCreateListPrompt(false); setListName(""); }}><X></X></button>
-                </div>
-            </div>
     )
 }
 
 
 
-export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEditTaskId, BoardId: boardId, editTaskListId, setEditTaskListId, enterTaskListId, setEnterTaskListId, openMenuId, setOpenMenuId, taskLists }: { taskList: TaskList, editTaskId: number | null, setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, BoardId: number, enterTaskListId: number | null, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, openMenuId: number | null, setOpenMenuId: React.Dispatch<React.SetStateAction<number | null>>, taskLists: TaskList[], editTaskListId: number | null, setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>> }) {
+export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEditTaskId, BoardId: boardId, editTaskListId, setEditTaskListId, enterTaskListId, setEnterTaskListId, openMenuId, setOpenMenuId, taskLists, draggingId, setDraggingId }: { taskList: TaskList, editTaskId: number | null, setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, BoardId: number, enterTaskListId: number | null, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, openMenuId: number | null, setOpenMenuId: React.Dispatch<React.SetStateAction<number | null>>, taskLists: TaskList[], editTaskListId: number | null, setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>>, draggingId: number | null, setDraggingId: React.Dispatch<React.SetStateAction<number | null>> }) {
 
     return (
-        <DraggableTaskList setEditTaskListId={setEditTaskListId} setTaskLists={setTaskLists} boardId={boardId} taskLists={taskLists} element={taskList}>
+        <DraggableTaskList className="rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2 z-10" setEditTaskListId={setEditTaskListId} setTaskLists={setTaskLists} boardId={boardId} taskLists={taskLists} element={taskList} draggingId={draggingId} setDraggingId={setDraggingId}>
             <div className="flex flex-row justify-between items-center">
                 <EditTaskListName boardId={boardId!} taskList={taskList} editTaskListId={editTaskListId} setEditTaskListId={setEditTaskListId} setTaskLists={setTaskLists} />
                 <TaskListMenu taskList={taskList} boardId={boardId} setTaskLists={setTaskLists} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} />

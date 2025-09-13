@@ -283,7 +283,7 @@ export function TaskCard({ task, taskList, setTaskLists, setEditTaskId, id, task
                 </div>)
 
             : (
-                <DraggableTask className="relative flex justify-between items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500 " setTaskLists={setTaskLists} boardId={id} taskLists={taskLists} taskList={taskList} task={task} >
+                <DraggableTask className="relative flex justify-between items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500 " setTaskLists={setTaskLists} boardId={id} taskList={taskList} task={task} taskLists={taskLists} >
                     <ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>
                     <div className="drag-handle whitespace-normal break-words w-5/6 ">{task.name}</div>
                     <div className="flex flex-col items-center text-gray-500 gap-1">

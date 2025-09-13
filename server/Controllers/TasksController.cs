@@ -405,7 +405,7 @@ public class EditTaskPositionRequest
 
 public class InsertTaskRequest
 {
-    public server.Models.Task Task { get; set; }
+    public TaskDto Task { get; set; }
     public int Index { get; set; }
     public int ListId { get; set; }
     public int BoardId { get; set; }

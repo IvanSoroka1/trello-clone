@@ -56,6 +56,7 @@ export default function Board() {
     const [editTaskId, setEditTaskId] = useState<number | null>(null); // so that only one task of any list can be edited at a time
     const [editTaskListId, setEditTaskListId] = useState<number | null>(null); // so that only one taskList can be edited at a time
     const [openMenuId, setOpenMenuId] = useState<number | null>(null); // so that only one menu can be open at a time
+    const [draggingId, setDraggingId] = useState<number | null>(null);
 
     return (
         <div>
@@ -71,7 +72,7 @@ export default function Board() {
                 {
                     // some of the props that are being sent to TaskListCard are being used by the children of the TaskListCard but not the TaskListCard itself. Should I use a context to fix this?
                     taskLists.map(
-                        (taskList: TaskList) => <TaskListCard key={taskList.id} taskList={taskList} setTaskLists={setTaskLists} editTaskId={editTaskId} setEditTaskId={setEditTaskId} BoardId={parseInt(id!, 10)} enterTaskListId={enterTaskListId} setEnterTaskListId={setEnterTaskListId} taskLists={taskLists} editTaskListId={editTaskListId} setEditTaskListId={setEditTaskListId} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} />
+                        (taskList: TaskList) => <TaskListCard key={taskList.id} taskList={taskList} setTaskLists={setTaskLists} editTaskId={editTaskId} setEditTaskId={setEditTaskId} BoardId={parseInt(id!, 10)} enterTaskListId={enterTaskListId} setEnterTaskListId={setEnterTaskListId} taskLists={taskLists} editTaskListId={editTaskListId} setEditTaskListId={setEditTaskListId} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} draggingId={draggingId} setDraggingId={setDraggingId} />
                     )
                 }
                 <AddNewList boardId={parseInt(id!, 10)} setTaskLists={setTaskLists} />
