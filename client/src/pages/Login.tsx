@@ -80,6 +80,11 @@ function Login() {
                         Register
                     </Link>
                 </div>
+                <div>
+                    <Link to="/" className="underline">
+                        Forgot your password?
+                    </Link>
+                </div>
             </form>
         </div>
     )
