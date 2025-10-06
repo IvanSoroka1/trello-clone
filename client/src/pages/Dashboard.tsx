@@ -1,8 +1,9 @@
-import {fetchWithRefresh} from "../Refresh.tsx";
+import { fetchWithRefresh } from "../Refresh.tsx";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
 import NameAndInput from "../components/NameAndInput.tsx";
+import UserButton from "../components/UserButton.tsx";
 
 interface Board {
     id: number,
@@ -51,7 +52,7 @@ export default function Dashboard() {
                 body: JSON.stringify({
                     Title: name
                 }),
-                credentials: "include" 
+                credentials: "include"
             }, navigate);
 
             const data = await response.json();
@@ -68,6 +69,9 @@ export default function Dashboard() {
         <div>
             <div className="flex justify-center py-2 text-4xl border-b-2">
                 My boards
+                <div className="absolute right-2">
+                    <UserButton></UserButton>
+                </div>
             </div>
             <div className="">
                 <div className="max-w-7xl mx-auto mt-2 grid grid-cols-7 gap-2 justify-items-center">
@@ -90,9 +94,9 @@ export default function Dashboard() {
                             </div>
                             <NameAndInput type="name" name="Board Name:" value={name} setter={setName} ></NameAndInput>
 
-                            <div className="absolute bottom-0 rounded w-full flex justify-center border-t-1 hover:bg-gray-100">
-                                <button onClick={createBoard} className=""> Create </button>
-                            </div>
+                            <button onClick={createBoard} className="absolute bottom-0 rounded w-full flex justify-center border-t-1 hover:bg-gray-100">
+                                Create
+                            </button>
                         </div>
                     }
 
@@ -101,8 +105,9 @@ export default function Dashboard() {
                             <div className="bg-white w-sm rounded">
                         <NameAndInput></NameAndInput>
                     </div>
-                </div>
-            }  */}
+                    </div>
+                    }  */}
+
                 </div>
             </div>
         </div>
