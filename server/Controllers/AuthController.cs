@@ -44,8 +44,31 @@ public class AuthController : ControllerBase
         string? email = ValidateRefreshToken(refreshToken);
         if (email == null)
             return Unauthorized();
-        return Ok(new {Email = email});
+        return Ok(new { Email = email });
     }
+
+    [HttpGet("logout")]
+    public IActionResult Logout()
+    {
+        var refreshToken = Request.Cookies["refreshToken"];
+        if (refreshToken != null)
+        {
+            var tokenRecord = _context.RefreshTokens.FirstOrDefault(rt => rt.Token == refreshToken);
+            if (tokenRecord != null)
+            {
+                // Revoke the token
+                tokenRecord.Revoked = true;
+                _context.SaveChanges();
+            }
+        }
+
+        // Delete cookies
+        Response.Cookies.Delete("refreshToken");
+        Response.Cookies.Delete("accessToken");
+
+        return Ok(new { message = "Logged out successfully" });
+    }
+
 
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest request)
@@ -66,6 +89,7 @@ public class AuthController : ControllerBase
         {
             existingRefreshToken.Token = refreshToken;
             existingRefreshToken.Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays);
+            existingRefreshToken.Revoked = false;
         }
         else
         {
@@ -136,11 +160,11 @@ public class AuthController : ControllerBase
         string myEmail = _secrets.PersonalEmail;
         string password = _secrets.EmailPassword;
 
-        #if RELEASE
+#if RELEASE
                         string websiteName = "http://18.219.52.3";
-        #else
-                string websiteName = "http://localhost:5173";
-        #endif
+#else
+        string websiteName = "http://localhost:5173";
+#endif
 
         Console.WriteLine($"Attempting to send Email to {request.Email}");
         try
