@@ -29,6 +29,11 @@ public class AuthController : ControllerBase
     private readonly int _accessTokenExpirationMinutes = 15;
     private readonly int _refreshTokenExpirationDays = 7;
 
+#if RELEASE
+                        private string websiteName = "http://18.219.52.3";
+#else
+        private string websiteName = "http://localhost:5173";
+#endif
 
     public AuthController(AppDbContext context, SecretsService secrets)
     {
@@ -133,6 +138,29 @@ public class AuthController : ControllerBase
             return Convert.ToBase64String(randomNumber);
         }
     }
+    
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        if (_context.Users.FirstOrDefault(u => u.Email == request.Email) == null)
+            return BadRequest(new { message = "User not found" });
+        var Token = GenerateJwtToken(request.Email);
+        return await sendEmail(request.Email, "Reset your password", $"Please click on this link to reset your password:\n{websiteName}/reset-password?token={Token}");
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        var email = ValidateVerificationToken(request.Token);
+        if (email == null)
+            return BadRequest(new { message = "Invalid Token" });
+        var user = _context.Users.FirstOrDefault(u => u.Email == email);
+        if (user == null)
+            return BadRequest(new { message = "User not found" });
+        user.PasswordHash = BCrypt.HashPassword(request.NewPassword);
+        _context.SaveChanges();
+        return Ok(new { message = "Password reset successfully" });
+    }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
@@ -157,16 +185,14 @@ public class AuthController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+        return await sendEmail(request.Email, "Register for The Task Manager App", $"Please click on this link to verify your email:\n{websiteName}/verify?token={Token}");
+
+
+    }
+
+    private async Task<IActionResult> sendEmail(string email, string subject, string body){
         string myEmail = _secrets.PersonalEmail;
         string password = _secrets.EmailPassword;
-
-#if RELEASE
-                        string websiteName = "http://18.219.52.3";
-#else
-        string websiteName = "http://localhost:5173";
-#endif
-
-        Console.WriteLine($"Attempting to send Email to {request.Email}");
         try
         {
 
@@ -179,10 +205,10 @@ public class AuthController : ControllerBase
             var mailMessage = new MailMessage
             {
                 From = new MailAddress(myEmail),
-                Subject = "Register for The Task Manager App",
-                Body = $"Please click on this link to verify your email:\n{websiteName}/verify?token={Token}",
+                Subject = subject,
+                Body = body,
             };
-            mailMessage.To.Add(request.Email);
+            mailMessage.To.Add(email);
 
             await smtpClient.SendMailAsync(mailMessage);
 
@@ -192,12 +218,8 @@ public class AuthController : ControllerBase
         {
             Console.WriteLine(ex);
             return StatusCode(500, new { message = "Failed to send email", error = ex.Message });
-
         }
-
-
     }
-
     [HttpPost("verify")]
     public IActionResult Verify([FromBody] VerifyRequest request)
     {
@@ -331,6 +353,17 @@ public class AuthController : ControllerBase
     {
         public string Email { get; set; }
         public string Password { get; set; }
+    }
+
+    public class ForgotPasswordRequest
+    {
+        public string Email { get; set; }
+    }
+
+    public class ResetPasswordRequest
+    {
+        public string NewPassword { get; set; }
+        public string Token { get; set; }
     }
 
     public class VerifyRequest

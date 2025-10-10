@@ -3,9 +3,9 @@ import { useState } from "react";
 import { IoMailUnreadOutline } from "react-icons/io5";
 import NameAndInput from "../components/NameAndInput.tsx";
 import { useNavigate } from "react-router-dom";
+import {emailRegex} from "../utilities/EmailRegex.tsx";
 
 function Register() {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const [usedEmail, setUsedEmail] = useState(false);
     const [showMessage, setShowMessage] = useState(false);
     const navigate = useNavigate();
