@@ -7,6 +7,7 @@ function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loginError, setLoginError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
 
@@ -49,6 +50,9 @@ function Login() {
                 if (data.email) {
                     navigate("/dashboard");
                 }
+                else {
+                    setLoading(false);
+                }
             })
         } catch (e) {
             console.log("Error: ", e);
@@ -56,6 +60,7 @@ function Login() {
     });
 
     return (
+        ( loading ? <div className = "flex justify-center items-center min-h-screen text-4xl">Loading...</div> :
         <div className="flex flex-col justify-center min-h-screen items-center">
             <div className="text-6xl text-bold mb-16">
                 Task Managing App
@@ -87,6 +92,7 @@ function Login() {
                 </div>
             </form>
         </div>
+            )
     )
 }
 

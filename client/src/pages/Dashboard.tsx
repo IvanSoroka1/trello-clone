@@ -13,6 +13,7 @@ interface Board {
 
 export default function Dashboard() {
     const [boards, setBoards] = useState<Board[]>([])
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -27,6 +28,7 @@ export default function Dashboard() {
                     navigate("/");
                     return;
                 }
+                setLoading(false);
                 const data = await response.json();
                 setBoards(data.message);
 
@@ -74,41 +76,37 @@ export default function Dashboard() {
                 </div>
             </div>
             <div className="">
-                <div className="max-w-7xl mx-auto mt-2 grid grid-cols-7 gap-2 justify-items-center">
-                    {
-                        boards.map((item) => (
-                            <button onClick={() => { navigate(`/board/${item.id}`, { state: { boardName: item.title } }); }} className="shadow-lg rounded w-full h-25 flex justify-center items-center hover:bg-gray-100" key={item.id}>{item.title}</button>
-                        )
-                        )
-                    }
+                {loading ?
+                    <div className="absolute inset-0 flex justify-center items-center text-4xl"> Loading... </div> 
+                    :
+                    <div className="max-w-7xl mx-auto mt-2 grid grid-cols-7 gap-2 justify-items-center">
+                        {
+                            boards.map((item) => (
+                                <button onClick={() => { navigate(`/board/${item.id}`, { state: { boardName: item.title } }); }} className="shadow-lg rounded w-full h-25 flex justify-center items-center hover:bg-gray-100" key={item.id}>{item.title}</button>
+                            )
+                            )
+                        }
 
-                    {!popup &&
-                        <button className="shadow-lg rounded w-full h-25 flex justify-center items-center hover:bg-gray-100" onClick={() => { setPopup(true) }} >
-                            <div>Create a new board</div>
-                        </button>
-                    }
-                    {popup &&
-                        <div className="relative border rounded w-50 h-25 ">
-                            <div className=" absolute top-0 right-0">
-                                <FiArrowLeft size={24} onClick={() => { setPopup(false) }} />
-                            </div>
-                            <NameAndInput type="name" name="Board Name:" value={name} setter={setName} ></NameAndInput>
-
-                            <button onClick={createBoard} className="absolute bottom-0 rounded w-full flex justify-center border-t-1 hover:bg-gray-100">
-                                Create
+                        {!popup &&
+                            <button className="shadow-lg rounded w-full h-25 flex justify-center items-center hover:bg-gray-100" onClick={() => { setPopup(true) }} >
+                                <div>Create a new board</div>
                             </button>
-                        </div>
-                    }
+                        }
+                        {popup &&
+                            <div className="relative border rounded w-50 h-25 ">
+                                <div className=" absolute top-0 right-0">
+                                    <FiArrowLeft size={24} onClick={() => { setPopup(false) }} />
+                                </div>
+                                <NameAndInput type="name" name="Board Name:" value={name} setter={setName} ></NameAndInput>
 
-                    {/* {popup &&
-                        <div className="flex justify-center items-center fixed inset-0 bg-black opacity-50">
-                            <div className="bg-white w-sm rounded">
-                        <NameAndInput></NameAndInput>
+                                <button onClick={createBoard} className="absolute bottom-0 rounded w-full flex justify-center border-t-1 hover:bg-gray-100">
+                                    Create
+                                </button>
+                            </div>
+                        }
                     </div>
-                    </div>
-                    }  */}
+                }
 
-                </div>
             </div>
         </div>
     )

@@ -1,4 +1,4 @@
-import {fetchWithRefresh} from "../../Refresh.tsx";
+import { fetchWithRefresh } from "../../Refresh.tsx";
 import { useEffect, useState } from "react";
 import TaskListCard from "./TaskList.tsx";
 import type { TaskList } from "./TaskList.tsx";
@@ -7,7 +7,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AddNewList } from "./TaskList.tsx";
 import ElipsesMenuButton from "./ElipsesMenuButton.tsx"
 
-function initBoard(id: string | undefined, navigate: any) {
+function initBoard(id: string | undefined, navigate: any, setLoading: React.Dispatch<React.SetStateAction<boolean>>) {
     const [taskLists, setTaskLists] = useState<TaskList[]>([]);
     useEffect(() => {
         try {
@@ -25,6 +25,7 @@ function initBoard(id: string | undefined, navigate: any) {
                     navigate("/");
                     return;
                 }
+                setLoading(false);
                 const data = await response.json();
 
                 data.message.sort((a: TaskList, b: TaskList) => a.position - b.position);
@@ -47,9 +48,10 @@ function initBoard(id: string | undefined, navigate: any) {
 
 export default function Board() {
 
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const { id } = useParams();
-    const { taskLists, setTaskLists } = initBoard(id, navigate);
+    const { taskLists, setTaskLists } = initBoard(id, navigate, setLoading);
     const location = useLocation();
     const boardName = location.state?.boardName || "Board Name"; // but if you have a bookmark for the page, you're going to need to look in the database for the name of the board
     const [enterTaskListId, setEnterTaskListId] = useState<number | null>(null); // so that only one list can have a task added to it at a time
@@ -67,7 +69,9 @@ export default function Board() {
                 </div>
             </div>
 
-            {/* Fix the scrollbar to be at the bottom of the screen */}
+            {loading ?
+                    <div className="absolute inset-0 flex justify-center items-center text-4xl"> Loading... </div> 
+                    :
             <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 items-start h-screen">
                 {
                     // some of the props that are being sent to TaskListCard are being used by the children of the TaskListCard but not the TaskListCard itself. Should I use a context to fix this?
@@ -77,6 +81,7 @@ export default function Board() {
                 }
                 <AddNewList boardId={parseInt(id!, 10)} setTaskLists={setTaskLists} />
             </div>
+            }
         </div >
     )
 
