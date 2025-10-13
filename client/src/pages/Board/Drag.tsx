@@ -28,6 +28,7 @@ interface DraggableTaskListProps {
     boardId: number;
     className: string;
     setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>>;
+    editTaskListId: number | null;
     children: React.ReactNode;
 }
 
@@ -49,6 +50,7 @@ export function DraggableTaskList({
     boardId,
     className,
     setEditTaskListId,
+    editTaskListId,
     children
 }: DraggableTaskListProps) {
     const elementRef = useRef<HTMLDivElement | null>(null);
@@ -57,7 +59,8 @@ export function DraggableTaskList({
     const clickedHandle = useRef(false);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-        clickedHandle.current = !!(e.target as HTMLElement).closest(".drag-handle");
+
+        clickedHandle.current = !!(e.target as HTMLElement).closest(".drag-handle-tasklist");
     };
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
@@ -93,6 +96,7 @@ export function DraggableTaskList({
         const dragImage = document.getElementById("temporary-drag-image");
         if (dragImage) dragImage.remove();
         isDraggingRef.current = false;
+        clickedHandle.current = false;
         // Restore original element's visibility
         if (elementRef.current) elementRef.current.style.opacity = "1";
     };
@@ -134,7 +138,7 @@ export function DraggableTaskList({
         <div
             ref={elementRef}
             id={`tasklist-${element.id}`}
-            draggable
+            draggable={!(!clickedHandle.current || editTaskListId === element.id)} // not draggable if you didn't click on the handle, or if the list is being edited
             onPointerDown={handlePointerDown}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
@@ -175,7 +179,7 @@ export function DraggableTask({
 
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         // allow drag only if pointer started on .drag-handle
-        dragStartAllowedRef.current = !!(e.target as HTMLElement).closest(".drag-handle");
+        dragStartAllowedRef.current = !!(e.target as HTMLElement).closest(".drag-handle-task");
     };
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {

@@ -275,7 +275,7 @@ export function TaskCard({ task, taskList, setTaskLists, setEditTaskId, id, task
             (
                 <div>
                     <div className="relative z-50">
-                        <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={() => { editTaskName?.(task.id, taskName, taskList.id) }} setId={undefined} bold={false} />
+                        <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={() => { editTaskName?.(task.id, taskName, taskList.id);  setEditTaskId(null); setTaskName(''); }} setId={undefined} bold={false} />
                         <div className="flex gap-2 items-center">
                             <FaCheck onClick={() => { editTaskName?.(task.id, taskName, taskList.id); setEditTaskId(null); setTaskName(''); }} className="text-green-500" /><X className="text-red-500" onClick={() => { setEditTaskId(null); setTaskName(''); }} />
                         </div>
@@ -285,7 +285,9 @@ export function TaskCard({ task, taskList, setTaskLists, setEditTaskId, id, task
             : (
                 <DraggableTask className="relative flex justify-between items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500 " setTaskLists={setTaskLists} boardId={id} taskList={taskList} task={task} taskLists={taskLists} >
                     <ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>
-                    <div className="drag-handle whitespace-normal break-words w-5/6 ">{task.name}</div>
+                    <div className="drag-handle-task whitespace-normal break-words w-5/6 ">
+                        {task.name}
+                    </div>
                     <div className="flex flex-col items-center text-gray-500 gap-1">
                         <FaRegTrashAlt size={12} onClick={() => { deleteTask?.(task.id, taskList.id); }} className="hover:text-black"></FaRegTrashAlt>
                         <FaEdit size={12} onClick={() => { setEditTaskId(task.id); setTaskName(task.name); }} className=" hover:text-black"></FaEdit>

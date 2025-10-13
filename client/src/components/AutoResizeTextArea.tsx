@@ -27,12 +27,18 @@ export function AutoResizeTextarea<T extends number | null | boolean>({
 
     return (
         <textarea
-            style={{ boxSizing: "border-box", overflowY: "hidden" }}
-            onMouseDown={(e) => e.stopPropagation()}
+            style={{ 
+            boxSizing: "border-box",
+            overflowY: "hidden",
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()} // Keep this!
+            onMouseMove={(e) => e.stopPropagation()} // Add this
+            onMouseUp={(e) => e.stopPropagation()} // Add this
             ref={textareaRef}
             value={taskName}
             onChange={(e) => setTaskName(e.target.value)}
-            className={`resize-none overflow-hidden break-all rounded p-1 bg-white shadow-lg w-full ${bold ? 'font-semibold' : ''}`}
+            className={`resize-none overflow-hidden break-normal wrap-anywhere rounded p-1 bg-white shadow-lg w-full ${bold ? 'font-semibold' : ''}`}
             onKeyDown={(e) => {
                 if (e.key === "Enter") {
                     e.preventDefault();

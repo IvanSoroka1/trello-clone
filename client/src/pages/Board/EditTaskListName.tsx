@@ -49,11 +49,14 @@ export default function EditTaskListName({boardId, taskList, editTaskListId, set
         }
     }
         return (editTaskListId !== taskList.id ? (
-            <div className="drag-handle whitespace-normal break-all font-semibold p-1 w-full">
+            <div className="drag-handle-tasklist whitespace-normal break-normal wrap-anywhere font-semibold p-1 w-full">
                 {taskList.name}
-            </div>)
+            </div>
+            )
             : (
-                <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={editTaskListName} setId={setEditTaskListId} bold={true}/>
+                <div className="drag-handle-tasklist">
+                    <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={editTaskListName} setId={setEditTaskListId} bold={true}/>
+                </div>
             )
         );
     
