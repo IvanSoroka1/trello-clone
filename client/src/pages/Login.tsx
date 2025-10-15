@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
-import NameAndInput from "../components/NameAndInput.tsx";
 import { fetchWithRefresh } from "../Refresh.tsx";
+import { Clipboard } from "lucide-react";
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -60,39 +60,56 @@ function Login() {
     });
 
     return (
-        ( loading ? <div className = "flex justify-center items-center min-h-screen text-4xl">Loading...</div> :
-        <div className="flex flex-col justify-center min-h-screen items-center">
-            <div className="text-6xl text-bold mb-16">
-                Task Managing App
-            </div>
-            <form onSubmit={handleSubmit} className="flex flex-col items-start">
-                <NameAndInput type="email" name="Email" value={email} setter={setEmail} />
-                <NameAndInput type="password" name="Password" value={password} setter={setPassword} />
-                {loginError && (
-                    <p className="text-red-500 whitespace-normal break-words">
-                        {loginError}
-                    </p>
-                )}
-                <div className="flex mt-6">
-                    <button className="border rounded hover:bg-gray-100 transition-colors duration-200 cursor-pointer px-4">
+        (loading ? <div className="flex justify-center items-center min-h-screen text-4xl">Loading...</div> :
+            <div className="flex flex-col justify-center min-h-screen items-center bg-hero">
+                <div className="shadow-lg flex flex-col justify-center items-center p-12 rounded-lg bg-white w-1/4">
+                    <Clipboard className="w-1/3 h-1/3 text-blue-500 mx-auto mb-4" />
+                    <div className="text-4xl text-center font-semibold">
+                        Task Managing App
+                    </div>
+                    <div className="text-1xl text-gray-500 text-center py-2">
+                        Stay organized and on top of tasks
+                    </div>
+                        <input
+                            type={"email"}
+                            value={email}
+                            className="border border-gray-200 rounded-lg bg-white p-2 w-full mb-2"
+                            onChange={(e) => { setEmail(e.target.value) }}
+                            placeholder="Email"
+                        >
+                        </input>
+                        <input
+                            type={"password"}
+                            value={password}
+                            className="border border-gray-200 rounded-lg bg-white p-2 w-full mb-2"
+                            onChange={(e) => { setPassword(e.target.value) }}
+                            placeholder="Password"
+                        >
+                        </input>
+
+                    {loginError && (
+                        <p className="text-red-500 whitespace-normal break-words">
+                            {loginError}
+                        </p>
+                    )}
+                    <button onClick={handleSubmit} className="text-white bg-blue-500 rounded-lg hover:bg-blue-400 transition-colors duration-200 cursor-pointer p-2 w-full">
                         Login
                     </button>
+                    <div className="text-gray-500 mt-12">
+                        Don't have an account?{' '}
+                        {/* <Link to="/register" className="ml-2 border rounded hover:bg-gray-100 transition-colors duration-200 cursor-pointer px-4"> */}
+                        <Link to="/register" className="underline">
+                            Register
+                        </Link>
+                    </div>
+                    <div className="text-gray-500 mt-2">
+                        <Link to="/forgot-password" className="underline">
+                            Forgot Password?
+                        </Link>
+                    </div>
                 </div>
-                <div className="mt-12">
-                    Don't have an account?{' '}
-                    {/* <Link to="/register" className="ml-2 border rounded hover:bg-gray-100 transition-colors duration-200 cursor-pointer px-4"> */}
-                    <Link to="/register" className="underline">
-                        Register
-                    </Link>
-                </div>
-                <div className="mt-2">
-                    <Link to="/forgot-password" className="underline">
-                        Forgot Password? 
-                    </Link>
-                </div>
-            </form>
-        </div>
-            )
+            </div>
+        )
     )
 }
 
