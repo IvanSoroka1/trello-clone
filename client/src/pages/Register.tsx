@@ -1,21 +1,29 @@
 import {fetchWithRefresh} from "../Refresh.tsx";
 import { useState } from "react";
 import { IoMailUnreadOutline } from "react-icons/io5";
-import NameAndInput from "../components/NameAndInput.tsx";
 import { useNavigate } from "react-router-dom";
 import {emailRegex} from "../utilities/EmailRegex.tsx";
+import InputsCard, {AppName} from "./InputsCard.tsx";
 
 function Register() {
     const [usedEmail, setUsedEmail] = useState(false);
     const [showMessage, setShowMessage] = useState(false);
+    const [emailError, setEmailError] = useState(false);
+    const [passwordError, setPasswordError] = useState(false);
     const navigate = useNavigate();
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         console.log("Attempting to register with the following email: ", email);
-        if (password != confirmPassword)
-            return;
         if (!emailRegex.test(email))
+        { 
+            setEmailError(true);
             return;
+        }
+        if (password != confirmPassword)
+        { 
+            setPasswordError(true);
+            return;
+        }
         try {
 
             const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/auth/register`,
@@ -50,33 +58,63 @@ function Register() {
 
     return (
         !showMessage ? (
-            <div className="flex min-h-screen justify-center items-center">
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <NameAndInput type="new-email" name="Email" value={email} setter={setEmail} />
-                    {
-                        (!emailRegex.test(email)) && (email != '') &&
-                        <div className="text-red-500">Error, invalid email!</div>
-                    }
-                    <NameAndInput type="password" name="Password" value={password} setter={setPassword} />
-                    <NameAndInput type="password" name="Retype Password" value={confirmPassword} setter={setConfirmPassword} />
-                    {(password != confirmPassword) && (confirmPassword != '') && (password != '') &&
-                        <div className="text-red-500">Error, passwords don't match!</div>}
-                    {
-                        (usedEmail) &&
-                        <div className="text-red-500">Error, email already in use!</div>
-                    }
-                    <button className="border rounded hover:bg-gray-100 transition-colors duration-200 cursor-pointer">
+                <InputsCard>
+                <AppName/>
+                <div className="font-bold py-2">Register Your Account</div>
+                    <input
+                        type={"email"}
+                        value={email}
+                        className="border border-gray-200 rounded-lg bg-white p-2 w-full mb-2"
+                        onChange={(e) => { setEmail(e.target.value) }}
+                        placeholder="Email"
+                    ></input>
+                    <input
+                            type={"password"}
+                            value={password}
+                            className="border border-gray-200 rounded-lg bg-white p-2 w-full mb-2"
+                            onChange={(e) => { setPassword(e.target.value) }}
+                            placeholder="Password"
+                        >
+                    </input>
+                    <input
+                            type={"password"}
+                            value={confirmPassword}
+                            className="border border-gray-200 rounded-lg bg-white p-2 w-full mb-2"
+                            onChange={(e) => { setConfirmPassword(e.target.value) }}
+                            placeholder="Confirm Password"
+                        >
+                    </input>
+                    <button onClick={handleSubmit} className="text-white bg-blue-500 rounded-lg hover:bg-blue-400 transition-colors duration-200 cursor-pointer p-2 w-full mt-2">
                         Register
                     </button>
-                </form>
-            </div>)
-            : (<div className="flex gap-8 min-h-screen items-center justify-center">
+                    {
+                        emailError &&
+                        <div className="text-red-500">Error, invalid email!</div>
+                    }
+                    {
+                        passwordError &&
+                        <div className="text-red-500">Error, passwords don't match!</div>}
+                    {
+                        usedEmail &&
+                        <div className="text-red-500">Error, email already in use!</div>
+                    }
 
-                <IoMailUnreadOutline size={100} />
-                <h1 className="w-1/2 text-4xl">
-                    We have sent an email to {email}. Please check your inbox to verify your account.
-                </h1>
-            </div>)
+                </InputsCard>
+            )
+            : 
+            (
+            <InputsCard>
+                <IoMailUnreadOutline size={100} className="text-blue-500"/>
+                <div className="font-bold text-2xl"> Check your email</div>
+                We sent a verfication link to:
+                <div className="font-bold">{email}</div>
+                {email.endsWith("gmail.com") && 
+                <a target="_blank" 
+                rel="noopener noreferrer" 
+                href="https://mail.google.com" className="text-center text-white bg-blue-500 rounded-lg hover:bg-blue-400 transition-colors duration-200 cursor-pointer p-2 w-full mt-2" > Open Email</a>
+                }
+            </InputsCard>
+            )
     );
 }
 export default Register

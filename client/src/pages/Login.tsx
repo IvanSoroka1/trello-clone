@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchWithRefresh } from "../Refresh.tsx";
-import { Clipboard } from "lucide-react";
+import InputsCard, { AppName } from './InputsCard.tsx';
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -61,15 +61,8 @@ function Login() {
 
     return (
         (loading ? <div className="flex justify-center items-center min-h-screen text-4xl">Loading...</div> :
-            <div className="flex flex-col justify-center min-h-screen items-center bg-hero">
-                <div className="shadow-lg flex flex-col justify-center items-center p-12 rounded-lg bg-white w-1/4">
-                    <Clipboard className="w-1/3 h-1/3 text-blue-500 mx-auto mb-4" />
-                    <div className="text-4xl text-center font-semibold">
-                        Task Managing App
-                    </div>
-                    <div className="text-1xl text-gray-500 text-center py-2">
-                        Stay organized and on top of tasks
-                    </div>
+                    <InputsCard>
+                    <AppName />
                         <input
                             type={"email"}
                             value={email}
@@ -78,6 +71,7 @@ function Login() {
                             placeholder="Email"
                         >
                         </input>
+
                         <input
                             type={"password"}
                             value={password}
@@ -107,8 +101,7 @@ function Login() {
                             Forgot Password?
                         </Link>
                     </div>
-                </div>
-            </div>
+                </InputsCard>
         )
     )
 }

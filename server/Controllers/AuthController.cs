@@ -32,7 +32,7 @@ public class AuthController : ControllerBase
 #if RELEASE
                         private string websiteName = "http://18.219.52.3";
 #else
-        private string websiteName = "http://localhost:5173";
+    private string websiteName = "http://localhost:5173";
 #endif
 
     public AuthController(AppDbContext context, SecretsService secrets)
@@ -138,7 +138,7 @@ public class AuthController : ControllerBase
             return Convert.ToBase64String(randomNumber);
         }
     }
-    
+
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
@@ -161,6 +161,26 @@ public class AuthController : ControllerBase
         _context.SaveChanges();
         return Ok(new { message = "Password reset successfully" });
     }
+
+    public class TokenRequest
+    {
+        public string Token { get; set; }
+    }
+
+    [HttpPost("verify-token")]
+    public async Task<IActionResult> VerifyToken([FromBody] TokenRequest request)
+    {
+        var email = ValidateVerificationToken(request.Token);
+        if (email == null)
+            return BadRequest(new { message = "Invalid Token" });
+
+        var user = _context.Users.FirstOrDefault(u => u.Email == email);
+        if (user == null)
+            return BadRequest(new { message = "User not found" });
+
+        return Ok(new { message = "Token is valid" });
+    }
+
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
@@ -190,7 +210,8 @@ public class AuthController : ControllerBase
 
     }
 
-    private async Task<IActionResult> sendEmail(string email, string subject, string body){
+    private async Task<IActionResult> sendEmail(string email, string subject, string body)
+    {
         string myEmail = _secrets.PersonalEmail;
         string password = _secrets.EmailPassword;
         try
