@@ -14,7 +14,7 @@ export default function ElipsesMenuButton({ id }: { id: number }) {
         const closeMenu = () => {
             setShowMenu(false);
         };
-        if (showMenu !== null) {
+        if (showMenu) {
             document.addEventListener("click", closeMenu);
         }
         return () => { document.removeEventListener("click", closeMenu); };

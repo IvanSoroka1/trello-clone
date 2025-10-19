@@ -11,7 +11,6 @@ export function TaskListMenu({
     setTaskLists,
     openMenuId,
     setOpenMenuId,
-
 }: {
     taskList: TaskList;
     boardId: number;
@@ -19,11 +18,12 @@ export function TaskListMenu({
     openMenuId: number | null;
     setOpenMenuId: React.Dispatch<React.SetStateAction<number | null>>;
 }) {
+    const navigate = useNavigate();
     const { deleteTaskList } = setUpApiTaskList(
         boardId,
         setTaskLists,
         ["deleteTaskList"],
-        useNavigate()
+        navigate
     );
 
     const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });

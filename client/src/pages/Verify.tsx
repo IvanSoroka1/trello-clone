@@ -39,11 +39,13 @@ function Verify() {
 
     return (
     <InputsCard>
+    <div className="flex flex-col justify-center items-center gap-4">
         <CheckCircleIcon className="w-24 h-24 text-green-500 py-2" />
         <div className="text-center text-lg font-bold py-2">
             {verificationStatus}
         </div>
         <button className="w-full text-white bg-blue-500 rounded-lg cursor-pointer p-2 mt-4" onClick={() => navigate("/")}>Login</button>
+    </div>
     </InputsCard>
 );
 }
