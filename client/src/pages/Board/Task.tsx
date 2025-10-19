@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { AutoResizeTextarea } from "../../components/AutoResizeTextArea.tsx";
 import { FaCheckCircle, FaEdit, FaRegCircle, FaRegTrashAlt } from "react-icons/fa";
 import { DraggableTask } from "./Drag.tsx"
+
 export interface Task {
     id: number;
     name: string;
@@ -14,30 +15,10 @@ import { useState } from "react";
 import type { TaskList } from "./TaskList.tsx"
 import { useNavigate } from "react-router-dom";
 
+export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, functionNames: string[], navigate: any) {
 
-//export function useNewTask({setTaskLists, setEnterTaskListId, setTaskName, id} : {setTaskLists:React.Dispatch<React.SetStateAction<TaskList[]>>, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, setTaskName: React.Dispatch<React.SetStateAction<string>>, id: number }) {
-
-// Define function signatures
-type NewTaskFn = (enterTaskListId: number, taskName: string) => Promise<void>;
-type EditTaskNameFn = (editTaskId: number, taskName: string, taskListId: number) => Promise<void>;
-type DeleteTaskFn = (taskId: number, taskListId: number) => Promise<void>;
-type InsertTaskFn = (index: number, taskListId: number, task: Task) => Promise<void>;
-type EditTaskPositionFn = (index1: number, index2: number, taskListId: number) => Promise<void>;
-
-type ApiFunctions = {
-    newTask: NewTaskFn;
-    editTaskName: EditTaskNameFn;
-    deleteTask: DeleteTaskFn;
-    insertTask: InsertTaskFn;
-    editTaskPosition: EditTaskPositionFn;
-};
-
-export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, functionNames: string[], navigate: any): Partial<ApiFunctions> {
-
-    const newTask = async (enterTaskListId: number, taskName: string) => {
+    const newTask = async (taskListId: number, taskName: string) => {
         try {
-            if (enterTaskListId === null) return; // No task list is selected
-
             const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/newtask`, {
                 method: "POST",
                 headers: {
@@ -45,7 +26,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
                 },
                 body: JSON.stringify({
                     TaskName: taskName,
-                    ListId: enterTaskListId,
+                    ListId: taskListId,
                     BoardId: boardId
                 }),
                 credentials: "include"
@@ -55,7 +36,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
                 throw (data.message);
             else {
                 setTaskLists(prevTaskLists => prevTaskLists.map(taskList => {
-                    if (taskList.id === enterTaskListId) {
+                    if (taskList.id === taskListId) {
                         return {
                             ...taskList,
                             tasks: [...taskList.tasks, data.message]
@@ -63,10 +44,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
                     }
                     return taskList;
                 }));
-                // setEnterTaskListId(null);
-                // setTaskName('');
             }
-
         } catch (e) {
             console.log(e);
         }
@@ -107,10 +85,7 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
                     }
                     return taskList;
                 }));
-                // setEditTaskId(null);
-                // setTaskName('');
             }
-
         } catch (e) {
             console.log(e);
         }
@@ -143,7 +118,6 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
                     }
                 }));
             }
-
         } catch (e) {
             console.log(e);
         }
@@ -167,11 +141,11 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
             const data = await response.json();
             if (!response.ok)
                 throw (data.message);
-
         } catch (e) {
             console.log(e);
         }
     }
+
     const editTaskPosition = async (index1: number, index2: number, taskListId: number) => {
         try {
             const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/tasks/edittaskposition`, {
@@ -194,15 +168,13 @@ export function setUpApiTasks(boardId: number, setTaskLists: React.Dispatch<Reac
             } catch (e) {
                 console.error("Failed to parse JSON:", text, e);
             }
-
             if (!response.ok) throw (data?.message || response.statusText);
-
         } catch (e) {
             console.log(e);
         }
     }
 
-    const funcs: Partial<ApiFunctions> = {};
+    const funcs: Record<string, any> = {};
     functionNames.forEach((fn) => {
         if (fn === "newTask") funcs.newTask = newTask;
         if (fn === "editTaskName") funcs.editTaskName = editTaskName;
@@ -226,7 +198,7 @@ function ToggleCheckIcon({ taskId, listId, boardId, completed }: { taskId: numbe
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    TaskId: taskId, // Assuming task is defined in the scope
+                    TaskId: taskId,
                     BoardId: boardId,
                     ListId: listId,
                     Completed: !isChecked
@@ -253,7 +225,6 @@ export function AddNewTask({ enterTaskListId, setEnterTaskListId, taskList, boar
             <button onClick={() => { setEnterTaskListId(taskList.id); }} className="rounded p-2 text-left">
                 + Add a new task
             </button>
-
             :
             <div className="mt-2">
                 <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={() => { newTask?.(taskList.id, taskName); setEnterTaskListId(null); setTaskName(""); }} setId={undefined} bold={false} />
@@ -264,13 +235,22 @@ export function AddNewTask({ enterTaskListId, setEnterTaskListId, taskList, boar
             </div>
     )
 }
-export function TaskCard({ task, taskList, setTaskLists, setEditTaskId, id, taskLists, editTaskId, }: { task: Task, taskList: TaskList, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>, id: number, taskLists: TaskList[], editTaskId: number | null }) {
+export function TaskCard({ task, taskList, setTaskLists, setEditTaskId, id, taskLists, editTaskId, handleScheduleDelete, pendingDeletion }: {
+    task: Task,
+    taskList: TaskList,
+    setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>,
+    setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>,
+    id: number,
+    taskLists: TaskList[],
+    editTaskId: number | null,
+    handleScheduleDelete?: (taskId: number, taskListId: number, boardId: number) => void,
+    pendingDeletion?: any
+}) {
 
     const { deleteTask, editTaskName } = setUpApiTasks(id, setTaskLists, ['deleteTask', 'editTaskName'], useNavigate());
     const [taskName, setTaskName] = useState(task.name);
 
     return (
-
         editTaskId === task.id ?
             (
                 <div>
@@ -281,19 +261,52 @@ export function TaskCard({ task, taskList, setTaskLists, setEditTaskId, id, task
                         </div>
                     </div>
                 </div>)
-
             : (
-                <DraggableTask className="relative flex justify-between items-center gap-1 rounded shadow-lg bg-white p-2 hover:border-blue-500 " setTaskLists={setTaskLists} boardId={id} taskList={taskList} task={task} taskLists={taskLists} >
-                    <ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>
-                    <div className="drag-handle-task whitespace-normal break-words w-5/6 ">
-                        {task.name}
+                <DraggableTask
+                    className={`relative flex justify-between items-center gap-1 rounded shadow-lg p-2 transition-all duration-200 ${
+                        pendingDeletion && pendingDeletion.taskId === task.id
+                            ? 'bg-red-50 border-2 border-red-300'
+                            : 'bg-white hover:border-blue-500'
+                    }`}
+                    setTaskLists={setTaskLists}
+                    boardId={id}
+                    taskList={taskList}
+                    task={task}
+                    taskLists={taskLists}
+                >
+                    <div className={`flex items-center gap-2 flex-1 ${pendingDeletion && pendingDeletion.taskId === task.id ? 'opacity-50' : ''}`}>
+                        <ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>
+                        <div className="drag-handle-task whitespace-normal break-words w-5/6 ">
+                            {task.name}
+                        </div>
                     </div>
-                    <div className="flex flex-col items-center text-gray-500 gap-1">
-                        <FaRegTrashAlt size={12} onClick={() => { deleteTask?.(task.id, taskList.id); }} className="hover:text-black"></FaRegTrashAlt>
-                        <FaEdit size={12} onClick={() => { setEditTaskId(task.id); setTaskName(task.name); }} className=" hover:text-black"></FaEdit>
+                    <div className="flex flex-col items-center gap-1">
+                        {pendingDeletion && pendingDeletion.taskId === task.id && (
+                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                        )}
+                        <FaRegTrashAlt
+                            size={12}
+                            onClick={() => {
+                                if (handleScheduleDelete) {
+                                    handleScheduleDelete?.(task.id, taskList.id, id);
+                                } else {
+                                    deleteTask?.(task.id, taskList.id);
+                                }
+                            }}
+                            className={`hover:text-black ${pendingDeletion && pendingDeletion.taskId === task.id ? 'text-red-500' : 'text-gray-500'}`}
+                        ></FaRegTrashAlt>
+                        <FaEdit
+                            size={12}
+                            onClick={() => {
+                                if (!(pendingDeletion && pendingDeletion.taskId === task.id)) {
+                                    setEditTaskId(task.id);
+                                    setTaskName(task.name);
+                                }
+                            }}
+                            className={`hover:text-black ${pendingDeletion && pendingDeletion.taskId === task.id ? 'opacity-50 cursor-not-allowed' : 'text-gray-500'}`}
+                        ></FaEdit>
                     </div>
                 </DraggableTask>
             )
     )
-
 }

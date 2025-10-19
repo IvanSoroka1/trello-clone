@@ -1,8 +1,6 @@
 import { useRef } from "react";
 import { type TaskList } from "./TaskList.tsx";
 import { type Task } from "./Task.tsx";
-//import {editTaskPosition, deleteTask, insertTask} from "./Task.tsx"
-//import {editTaskListPosition} from "./TaskList.tsx"
 import { setUpApiTasks } from "./Task.tsx";
 import { setUpApiTaskList } from "./TaskList.tsx"
 import React from "react";
@@ -17,29 +15,7 @@ interface DraggableTaskListProps {
     setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>>;
     draggingId: number | null;
     setDraggingId: React.Dispatch<React.SetStateAction<number | null>>;
-    children: React.ReactNode;
-}
-
-
-interface DraggableTaskListProps {
-    element: TaskList;
-    taskLists: TaskList[];
-    setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>;
-    boardId: number;
-    className: string;
-    setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>>;
     editTaskListId: number | null;
-    children: React.ReactNode;
-}
-
-
-interface DraggableTaskListProps {
-    element: TaskList;
-    taskLists: TaskList[];
-    setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>;
-    boardId: number;
-    className: string;
-    setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>>;
     children: React.ReactNode;
 }
 

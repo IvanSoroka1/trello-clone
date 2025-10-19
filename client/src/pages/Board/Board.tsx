@@ -5,7 +5,9 @@ import type { TaskList } from "./TaskList.tsx";
 import type { Task } from "./Task.tsx"
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AddNewList } from "./TaskList.tsx";
-import ElipsesMenuButton from "./ElipsesMenuButton.tsx"
+import ElipsesMenuButton from "./ElipsesMenuButton.tsx";
+import { UndoButton } from "./UndoButton.tsx";
+import { useUndoDelete } from "./useUndoDelete.ts";
 
 function initBoard(id: string | undefined, navigate: any, setLoading: React.Dispatch<React.SetStateAction<boolean>>) {
     const [taskLists, setTaskLists] = useState<TaskList[]>([]);
@@ -59,9 +61,25 @@ export default function Board() {
     const [editTaskListId, setEditTaskListId] = useState<number | null>(null); // so that only one taskList can be edited at a time
     const [openMenuId, setOpenMenuId] = useState<number | null>(null); // so that only one menu can be open at a time
     const [draggingId, setDraggingId] = useState<number | null>(null);
+    const { pendingDeletion, undoTimer, handleScheduleDelete, handleUndoDelete } = useUndoDelete(taskLists, setTaskLists, parseInt(id!, 10), navigate);
+
+    const findTaskName = (taskId: number, taskListId: number): string => {
+        const taskList = taskLists.find(tl => tl.id === taskListId);
+        if (taskList) {
+            const task = taskList.tasks.find(t => t.id === taskId);
+            return task ? task.name : "Task";
+        }
+        return "Task";
+    };
 
     return (
         <div>
+            <UndoButton
+                pendingDeletion={pendingDeletion}
+                undoTimer={undoTimer}
+                onUndo={handleUndoDelete}
+                taskName={pendingDeletion ? findTaskName(pendingDeletion.taskId, pendingDeletion.taskListId) : ''}
+            />
             <div className="flex justify-center items-center p-2 border-b">
                 {boardName}
                 <div className="absolute right-2">
@@ -70,13 +88,31 @@ export default function Board() {
             </div>
 
             {loading ?
-                    <div className="absolute inset-0 flex justify-center items-center text-4xl"> Loading... </div> 
+                    <div className="absolute inset-0 flex justify-center items-center text-4xl"> Loading... </div>
                     :
             <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 items-start h-screen">
                 {
                     // some of the props that are being sent to TaskListCard are being used by the children of the TaskListCard but not the TaskListCard itself. Should I use a context to fix this?
                     taskLists.map(
-                        (taskList: TaskList) => <TaskListCard key={taskList.id} taskList={taskList} setTaskLists={setTaskLists} editTaskId={editTaskId} setEditTaskId={setEditTaskId} BoardId={parseInt(id!, 10)} enterTaskListId={enterTaskListId} setEnterTaskListId={setEnterTaskListId} taskLists={taskLists} editTaskListId={editTaskListId} setEditTaskListId={setEditTaskListId} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} draggingId={draggingId} setDraggingId={setDraggingId} />
+                        (taskList: TaskList) => <TaskListCard
+                            key={taskList.id}
+                            taskList={taskList}
+                            setTaskLists={setTaskLists}
+                            editTaskId={editTaskId}
+                            setEditTaskId={setEditTaskId}
+                            BoardId={parseInt(id!, 10)}
+                            enterTaskListId={enterTaskListId}
+                            setEnterTaskListId={setEnterTaskListId}
+                            taskLists={taskLists}
+                            editTaskListId={editTaskListId}
+                            setEditTaskListId={setEditTaskListId}
+                            openMenuId={openMenuId}
+                            setOpenMenuId={setOpenMenuId}
+                            draggingId={draggingId}
+                            setDraggingId={setDraggingId}
+                            handleScheduleDelete={handleScheduleDelete}
+                            pendingDeletion={pendingDeletion}
+                        />
                     )
                 }
                 <AddNewList boardId={parseInt(id!, 10)} setTaskLists={setTaskLists} />

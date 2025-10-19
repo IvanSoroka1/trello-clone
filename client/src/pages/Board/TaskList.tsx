@@ -45,9 +45,7 @@ export function setUpApiTaskList(id: number, setTaskLists: React.Dispatch<React.
                 throw (data.message);
             else {
                 setTaskLists(prevTaskLists => [...prevTaskLists, data.message]);
-                // take care of these lines outside of the function??
-                // setCreateListPrompt(false); 
-                // setListName(''); // Clear the input field after creating a new task list
+                // The createListPrompt and listName state are handled in the AddNewList component
             }
 
         } catch (e) {
@@ -145,7 +143,24 @@ export function AddNewList({ boardId, setTaskLists }: { boardId: number, setTask
 
 
 
-export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEditTaskId, BoardId: boardId, editTaskListId, setEditTaskListId, enterTaskListId, setEnterTaskListId, openMenuId, setOpenMenuId, taskLists, draggingId, setDraggingId }: { taskList: TaskList, editTaskId: number | null, setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>, BoardId: number, enterTaskListId: number | null, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, openMenuId: number | null, setOpenMenuId: React.Dispatch<React.SetStateAction<number | null>>, taskLists: TaskList[], editTaskListId: number | null, setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>>, draggingId: number | null, setDraggingId: React.Dispatch<React.SetStateAction<number | null>> }) {
+export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEditTaskId, BoardId: boardId, editTaskListId, setEditTaskListId, enterTaskListId, setEnterTaskListId, openMenuId, setOpenMenuId, taskLists, draggingId, setDraggingId, handleScheduleDelete, pendingDeletion }: {
+    taskList: TaskList,
+    editTaskId: number | null,
+    setEditTaskId: React.Dispatch<React.SetStateAction<number | null>>,
+    setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>>,
+    BoardId: number,
+    enterTaskListId: number | null,
+    setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>,
+    openMenuId: number | null,
+    setOpenMenuId: React.Dispatch<React.SetStateAction<number | null>>,
+    taskLists: TaskList[],
+    editTaskListId: number | null,
+    setEditTaskListId: React.Dispatch<React.SetStateAction<number | null>>,
+    draggingId: number | null,
+    setDraggingId: React.Dispatch<React.SetStateAction<number | null>>,
+    handleScheduleDelete?: (taskId: number, taskListId: number, boardId: number) => void,
+    pendingDeletion?: any
+}) {
 
     return (
         <DraggableTaskList className="rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2 z-10" setEditTaskListId={setEditTaskListId} setTaskLists={setTaskLists} boardId={boardId} taskLists={taskLists} element={taskList} draggingId={draggingId} setDraggingId={setDraggingId} editTaskListId={editTaskListId}>
@@ -155,7 +170,17 @@ export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEd
             </div>
             {taskList.tasks && taskList.tasks.map((task: Task) => (
                 <div id={`task-${task.id}`} key={task.id}>
-                    <TaskCard task={task} taskList={taskList} setTaskLists={setTaskLists} setEditTaskId={setEditTaskId} id={boardId} taskLists={taskLists} editTaskId={editTaskId} />
+                    <TaskCard
+                        task={task}
+                        taskList={taskList}
+                        setTaskLists={setTaskLists}
+                        setEditTaskId={setEditTaskId}
+                        id={boardId}
+                        taskLists={taskLists}
+                        editTaskId={editTaskId}
+                        handleScheduleDelete={handleScheduleDelete}
+                        pendingDeletion={pendingDeletion}
+                    />
                 </div>
             )
             )

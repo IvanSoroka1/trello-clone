@@ -5,6 +5,7 @@ import { fetchWithRefresh } from "../Refresh";
 import { useNavigate } from "react-router-dom";
 
 export default function UserButton() {
+    const navigate = useNavigate();
 
     const logOut = async () => {
         const response = await fetchWithRefresh(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
@@ -36,7 +37,6 @@ export default function UserButton() {
     // nearly everything below is almost directly copied from ElipsesMenuButton with minor differences. This may be refactored.
     const [showMenu, setShowMenu] = useState(false);
     const [position, setPosition] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
-    const navigate = useNavigate();
 
     useEffect(() => {
         const closeMenu = () => {

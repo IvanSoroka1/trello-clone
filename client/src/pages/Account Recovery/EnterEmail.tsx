@@ -9,7 +9,7 @@ function EnterEmail() {
         none,
         success,
         invalidFormat,
-        nonExistantEmail
+        nonExistentEmail
     }
 
     const [email, setEmail] = useState('');
@@ -33,7 +33,7 @@ function EnterEmail() {
         if (response.ok)
             setDisplayMessage(MessageType.success);
         else // if the email isn't recognized
-            setDisplayMessage(MessageType.nonExistantEmail);
+            setDisplayMessage(MessageType.nonExistentEmail);
     }
 
     return (
@@ -77,7 +77,7 @@ function EnterEmail() {
                     {displayMessage === MessageType.invalidFormat && (
                         <div className="text-red-500">Error: Invalid email format</div>
                     )}
-                    {displayMessage === MessageType.nonExistantEmail && (
+                    {displayMessage === MessageType.nonExistentEmail && (
                         <div className="text-red-500">Error: No account with this email exists</div>
                     )}
                 </div>
