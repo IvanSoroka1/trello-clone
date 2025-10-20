@@ -5,6 +5,8 @@ using Microsoft.VisualBasic;
 using server.Data;
 using server.Models;
 
+namespace server.Controllers;
+
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]

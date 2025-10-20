@@ -13,7 +13,7 @@ using System.Net;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 using System.Security.Claims;
-namespace TaskManagerAPI.Controllers;
+namespace server.Controllers;
 
 using System.Security.Cryptography;
 using BCrypt.Net;

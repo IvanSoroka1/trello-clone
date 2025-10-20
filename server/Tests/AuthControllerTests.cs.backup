@@ -1,0 +1,679 @@
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+using server.Controllers;
+using server.Data;
+using server.Models;
+using server.Tests.TestFixtures;
+using server.Tests.Utilities;
+using System.Security.Claims;
+using Xunit;
+
+namespace server.Tests;
+
+public class AuthControllerTests
+{
+    private readonly AuthController _controller;
+    private readonly AppDbContext _context;
+    private readonly SecretsService _secretsService;
+
+    public AuthControllerTests()
+    {
+        _context = TestDbContextFactory.CreateDbContext();
+        _secretsService = new SecretsService
+        {
+            JwtSecret = "test-secret-key-for-testing-purposes-only-123456789",
+            PersonalEmail = "test@example.com",
+            EmailPassword = "test-email-password"
+        };
+        _controller = new AuthController(_context, _secretsService);
+    }
+
+    [Xunit.Trait("Category", "AuthController - Registration")]
+    public class RegistrationTests
+    {
+        private readonly AuthController _controller;
+        private readonly AppDbContext _context;
+        private readonly SecretsService _secretsService;
+
+        public RegistrationTests()
+        {
+            _context = TestDbContextFactory.CreateDbContext();
+            _secretsService = new SecretsService
+            {
+                JwtSecret = "test-secret-key-for-testing-purposes-only-123456789",
+                PersonalEmail = "test@example.com",
+                EmailPassword = "test-email-password"
+            };
+            _controller = new AuthController(_context, _secretsService);
+        }
+
+        [Fact]
+        public async Task Register_WithValidData_ShouldReturnSuccessAndCreateUser()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidRegisterRequest();
+            request.Email = "newuser@example.com";
+
+            // Act
+            var result = await _controller.Register(request);
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+            var user = _context.Users.FirstOrDefault(u => u.Email == request.Email);
+            Assert.NotNull(user);
+            Assert.Equal(request.Email, user.Email);
+            Assert.Equal("newuser@example.com", user.Email);
+            Assert.False(user.Verified);
+        }
+
+        [Fact]
+        public async Task Register_WithDuplicateEmail_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var existingUser = _context.Users.FirstOrDefault(u => u.Email == "test@example.com");
+            Assert.NotNull(existingUser);
+
+            var request = MockDataService.CreateValidRegisterRequest();
+            request.Email = "test@example.com";
+
+            // Act
+            var result = await _controller.Register(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "EMAIL_EXISTS");
+        }
+
+        [Fact]
+        public async Task Register_WithValidEmailFormat_ShouldCreateUser()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidRegisterRequest();
+            request.Email = "test.user+alias@example.com";
+
+            // Act
+            var result = await _controller.Register(request);
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+            var user = _context.Users.FirstOrDefault(u => u.Email == request.Email);
+            Assert.NotNull(user);
+            TestHelper.AssertValidEmailFormat(user.Email);
+        }
+
+        [Fact]
+        public async Task Register_WithStrongPassword_ShouldHashPasswordProperly()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidRegisterRequest();
+            request.Password = "StrongPass123!@#";
+
+            // Act
+            var result = await _controller.Register(request);
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+            var user = _context.Users.FirstOrDefault(u => u.Email == request.Email);
+            Assert.NotNull(user);
+            Assert.NotEqual(request.Password, user.PasswordHash); // Hash should be different
+            Assert.True(BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash));
+        }
+    }
+
+    [Xunit.Trait("Category", "AuthController - Login")]
+    public class LoginTests
+    {
+        private readonly AuthController _controller;
+        private readonly AppDbContext _context;
+        private readonly SecretsService _secretsService;
+
+        public LoginTests()
+        {
+            _context = TestDbContextFactory.CreateDbContext();
+            _secretsService = new SecretsService
+            {
+                JwtSecret = "test-secret-key-for-testing-purposes-only-123456789",
+                PersonalEmail = "test@example.com",
+                EmailPassword = "test-email-password"
+            };
+            _controller = new AuthController(_context, _secretsService);
+
+            // Ensure test user exists and is verified
+            var testUser = _context.Users.FirstOrDefault(u => u.Email == "test@example.com");
+            if (testUser != null && !testUser.Verified)
+            {
+                testUser.Verified = true;
+                _context.SaveChanges();
+            }
+        }
+
+        [Fact]
+        public async Task Login_WithValidCredentials_ShouldReturnSuccessAndSetCookies()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidLoginRequest();
+
+            // Act
+            var result = await _controller.Login(request);
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+
+            // Check if cookies were set
+            var response = result as OkObjectResult;
+            Assert.NotNull(response);
+            Assert.NotNull(response.HttpContext.Response.Cookies);
+        }
+
+        [Fact]
+        public async Task Login_WithNonExistentEmail_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidLoginRequest();
+            request.Email = "nonexistent@example.com";
+            request.Password = "SomePassword123!";
+
+            // Act
+            var result = await _controller.Login(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "No account with such an email exists");
+        }
+
+        [Fact]
+        public async Task Login_WithIncorrectPassword_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidLoginRequest();
+            request.Password = "WrongPassword123!";
+
+            // Act
+            var result = await _controller.Login(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "Incorrect password");
+        }
+
+        [Fact]
+        public async Task Login_WithUnverifiedAccount_ShouldRequestVerification()
+        {
+            // Arrange
+            var unverifiedUser = MockDataService.CreateUnverifiedUser();
+            _context.Users.Add(unverifiedUser);
+            _context.SaveChanges();
+
+            var request = new AuthController.LoginRequest
+            {
+                Email = unverifiedUser.Email,
+                Password = "UnverifiedPassword123!"
+            };
+
+            // Act
+            var result = await _controller.Login(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "Please verify your email");
+        }
+
+        [Fact]
+        public async Task Login_ShouldUpdateExistingRefreshToken()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidLoginRequest();
+            var existingToken = _context.RefreshTokens.FirstOrDefault();
+            Assert.NotNull(existingToken);
+
+            // Act
+            var result = await _controller.Login(request);
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+
+            var updatedToken = _context.RefreshTokens.FirstOrDefault(rt => rt.Email == request.Email);
+            Assert.NotNull(updatedToken);
+            Assert.NotEqual(existingToken.Token, updatedToken.Token); // Token should be updated
+        }
+    }
+
+    [Xunit.Trait("Category", "AuthController - Token Management")]
+    public class TokenManagementTests
+    {
+        [Fact]
+        public async Task Me_WithValidRefreshTokenInCookie_ShouldReturnUserInfo()
+        {
+            // Arrange - Set refresh token cookie
+            var request = MockDataService.CreateValidLoginRequest();
+            var loginResult = await _controller.Login(request);
+
+            // Act
+            var result = _controller.Me();
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+            AssertExtensions.AssertContainsEmailResponse(result, "test@example.com");
+        }
+
+        [Fact]
+        public IActionResult Me_WithoutRefreshToken_ShouldReturnUnauthorized()
+        {
+            // Arrange - No refresh token cookie
+
+            // Act
+            var result = _controller.Me();
+
+            // Assert
+            AssertExtensions.AssertUnauthorizedResult(result);
+        }
+
+        [Fact]
+        public async Task Me_WithInvalidRefreshToken_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            var controller = new AuthController(_context, _secretsService);
+
+            // Set invalid refresh token cookie by mocking
+            controller.ControllerContext.HttpContext.Request.Cookies = new MockMicrosoft.AspNetCore.Http.IRequestCookieCollection();
+            ((MockMicrosoft.AspNetCore.Http.IRequestCookieCollection)controller.ControllerContext.HttpContext.Request.Cookies)["refreshToken"] = "invalid-token";
+
+            // Act
+            var result = controller.Me();
+
+            // Assert
+            AssertExtensions.AssertUnauthorizedResult(result);
+        }
+
+        [Fact]
+        public void Refresh_WithoutRefreshToken_ShouldReturnUnauthorized()
+        {
+            // Arrange
+
+            // Act
+            var result = _controller.Refresh();
+
+            // Assert
+            AssertExtensions.AssertUnauthorizedResult(result);
+        }
+
+        [Fact]
+        public void Refresh_WithValidRefreshToken_ShouldReturnNewAccessToken()
+        {
+            // Arrange - Login first to get valid refresh token
+            var loginRequest = MockDataService.CreateValidLoginRequest();
+            _controller.Login(loginRequest).Wait();
+
+            // Act
+            var result = _controller.Refresh();
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+        }
+
+        [Fact]
+        public IActionResult Logout_WithValidRefreshToken_ShouldRevokeTokenAndDeleteCookies()
+        {
+            // Arrange
+            var loginRequest = MockDataService.CreateValidLoginRequest();
+            _controller.Login(loginRequest).Wait();
+
+            // Act
+            var result = _controller.Logout();
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+            AssertExtensions.AssertContainsMessageResponse(result, "Logged out successfully");
+        }
+
+        [Fact]
+        public IActionResult Logout_WithoutRefreshToken_ShouldStillReturnSuccess()
+        {
+            // Arrange
+
+            // Act
+            var result = _controller.Logout();
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+        }
+    }
+
+    [Xunit.Trait("Category", "AuthController - Password Recovery")]
+    public class PasswordRecoveryTests
+    {
+        [Fact]
+        public async Task ForgotPassword_WithValidEmail_ShouldSendEmailAndReturnSuccess()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidForgotPasswordRequest();
+
+            // Act
+            var result = await _controller.ForgotPassword(request);
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+            AssertExtensions.AssertContainsMessageResponse(result, "Email sent succesfully");
+        }
+
+        [Fact]
+        public async Task ForgotPassword_WithNonExistentEmail_ShouldReturnUserNotFound()
+        {
+            // Arrange
+            var request = new AuthController.ForgotPasswordRequest
+            {
+                Email = "nonexistent@example.com"
+            };
+
+            // Act
+            var result = await _controller.ForgotPassword(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "User not found");
+        }
+
+        [Fact]
+        public async Task ResetPassword_WithValidTokenAndNewPassword_ShouldUpdatePassword()
+        {
+            // Arrange
+            var email = "test@example.com";
+            var token = TestHelper.GenerateValidJwtToken(email);
+            var request = new AuthController.ResetPasswordRequest
+            {
+                Token = token,
+                NewPassword = "NewStrongPassword123!"
+            };
+
+            // Act
+            var result = await _controller.ResetPassword(request);
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+            AssertExtensions.AssertContainsMessageResponse(result, "Password reset successfully");
+
+            var user = _context.Users.FirstOrDefault(u => u.Email == email);
+            Assert.NotNull(user);
+            Assert.True(BCrypt.Net.BCrypt.Verify(request.NewPassword, user.PasswordHash));
+        }
+
+        [Fact]
+        public async Task ResetPassword_WithInvalidToken_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var request = new AuthController.ResetPasswordRequest
+            {
+                Token = "invalid-token",
+                NewPassword = "NewStrongPassword123!"
+            };
+
+            // Act
+            var result = await _controller.ResetPassword(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "Invalid Token");
+        }
+
+        [Fact]
+        public async Task ResetPassword_WithValidTokenButNonExistentUser_ShouldReturnUserNotFound()
+        {
+            // Arrange
+            var token = TestHelper.GenerateValidJwtToken("nonexistent@example.com");
+            var request = new AuthController.ResetPasswordRequest
+            {
+                Token = token,
+                NewPassword = "NewStrongPassword123!"
+            };
+
+            // Act
+            var result = await _controller.ResetPassword(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "User not found");
+        }
+    }
+
+    [Xunit.Trait("Category", "AuthController - Email Verification")]
+    public class EmailVerificationTests
+    {
+        [Fact]
+        public async Task Verify_WithValidToken_ShouldMarkUserAsVerified()
+        {
+            // Arrange
+            var unverifiedUser = MockDataService.CreateUnverifiedUser();
+            _context.Users.Add(unverifiedUser);
+            _context.SaveChanges();
+
+            var token = TestHelper.GenerateValidJwtToken(unverifiedUser.Email);
+            var request = new AuthController.VerifyRequest
+            {
+                Token = token
+            };
+
+            // Act
+            var result = await _controller.Verify(request);
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+            AssertExtensions.AssertContainsMessageResponse(result, "You have succesfully registered!");
+
+            var user = _context.Users.FirstOrDefault(u => u.Email == unverifiedUser.Email);
+            Assert.NotNull(user);
+            Assert.True(user.Verified);
+        }
+
+        [Fact]
+        public async Task Verify_WithInvalidToken_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var request = new AuthController.VerifyRequest
+            {
+                Token = "invalid-token"
+            };
+
+            // Act
+            var result = await _controller.Verify(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "Invalid Token");
+        }
+
+        [Fact]
+        public async Task Verify_WithAlreadyVerifiedUser_ShouldReturnAlreadyVerified()
+        {
+            // Arrange
+            var verifiedUser = MockDataService.CreateTestUser();
+            verifiedUser.Verified = true;
+            _context.Users.Add(verifiedUser);
+            _context.SaveChanges();
+
+            var token = TestHelper.GenerateValidJwtToken(verifiedUser.Email);
+            var request = new AuthController.VerifyRequest
+            {
+                Token = token
+            };
+
+            // Act
+            var result = await _controller.Verify(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "Already verified");
+        }
+
+        [Fact]
+        public async Task Verify_WithValidTokenButNonExistentUser_ShouldReturnUserNotFound()
+        {
+            // Arrange
+            var token = TestHelper.GenerateValidJwtToken("nonexistent@example.com");
+            var request = new AuthController.VerifyRequest
+            {
+                Token = token
+            };
+
+            // Act
+            var result = await _controller.Verify(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "User not found");
+        }
+
+        [Fact]
+        public async Task VerifyToken_WithValidToken_ShouldReturnSuccess()
+        {
+            // Arrange
+            var email = "test@example.com";
+            var token = TestHelper.GenerateValidJwtToken(email);
+            var request = new AuthController.TokenRequest
+            {
+                Token = token
+            };
+
+            // Act
+            var result = await _controller.VerifyToken(request);
+
+            // Assert
+            AssertExtensions.AssertOkResult(result);
+            AssertExtensions.AssertContainsMessageResponse(result, "Token is valid");
+        }
+
+        [Fact]
+        public async Task VerifyToken_WithInvalidToken_ShouldReturnInvalidToken()
+        {
+            // Arrange
+            var request = new AuthController.TokenRequest
+            {
+                Token = "invalid-token"
+            };
+
+            // Act
+            var result = await _controller.VerifyToken(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "Invalid Token");
+        }
+
+        [Fact]
+        public async Task VerifyToken_WithValidTokenButNonExistentUser_ShouldReturnUserNotFound()
+        {
+            // Arrange
+            var token = TestHelper.GenerateValidJwtToken("nonexistent@example.com");
+            var request = new AuthController.TokenRequest
+            {
+                Token = token
+            };
+
+            // Act
+            var result = await _controller.VerifyToken(request);
+
+            // Assert
+            AssertExtensions.AssertBadRequestResult(result, "User not found");
+        }
+    }
+
+    [Xunit.Trait("Category", "AuthController - Input Validation")]
+    public class InputValidationTests
+    {
+        [Fact]
+        public async Task Register_WithEmptyEmail_ShouldFail()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidRegisterRequest();
+            request.Email = "";
+
+            // Act
+            var result = await _controller.Register(request);
+
+            // Assert
+            // Should fail validation, but actual behavior depends on model validation
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.NotNull(badRequestResult);
+        }
+
+        [Fact]
+        public async Task Register_WithInvalidEmailFormat_ShouldFail()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidRegisterRequest();
+            request.Email = "invalid-email";
+
+            // Act
+            var result = await _controller.Register(request);
+
+            // Assert
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.NotNull(badRequestResult);
+        }
+
+        [Fact]
+        public async Task Register_WithEmptyPassword_ShouldFail()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidRegisterRequest();
+            request.Password = "";
+
+            // Act
+            var result = await _controller.Register(request);
+
+            // Assert
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.NotNull(badRequestResult);
+        }
+
+        [Fact]
+        public async Task Register_WithWeakPassword_ShouldFail()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidRegisterRequest();
+            request.Password = "weak";
+
+            // Act
+            var result = await _controller.Register(request);
+
+            // Assert
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.NotNull(badRequestResult);
+        }
+
+        [Fact]
+        public async Task Login_WithEmptyEmail_ShouldFail()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidLoginRequest();
+            request.Email = "";
+
+            // Act
+            var result = await _controller.Login(request);
+
+            // Assert
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.NotNull(badRequestResult);
+        }
+
+        [Fact]
+        public async Task Login_WithEmptyPassword_ShouldFail()
+        {
+            // Arrange
+            var request = MockDataService.CreateValidLoginRequest();
+            request.Password = "";
+
+            // Act
+            var result = await _controller.Login(request);
+
+            // Assert
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.NotNull(badRequestResult);
+        }
+    }
+}
+
+// Mock helper for HttpContext
+namespace MockMicrosoft.AspNetCore.Http
+{
+    public class MockRequestCookieCollection : IRequestCookieCollection
+    {
+        private readonly Dictionary<string, string> _dictionary = new();
+
+        public string this[string key] { get => _dictionary[key]; set => _dictionary[key] = value; }
+        public int Count => _dictionary.Count;
+        public ICollection<string> Keys => _dictionary.Keys;
+        public bool ContainsKey(string key) => _dictionary.ContainsKey(key);
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => _dictionary.GetEnumerator();
+        public bool TryGetValue(string key, out string value) => _dictionary.TryGetValue(key, out value);
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => _dictionary.GetEnumerator();
+    }
+}
