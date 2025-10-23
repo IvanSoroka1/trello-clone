@@ -123,20 +123,59 @@ export function AddNewList({ boardId, setTaskLists }: { boardId: number, setTask
     const [createListPrompt, setCreateListPrompt] = useState(false); // could this create a problem of multiple prompts?
     const { newTaskList } = setUpApiTaskList(boardId, setTaskLists, ['newTaskList'], useNavigate());
     return (
-        !createListPrompt ?
-            (<button onClick={() => setCreateListPrompt(true)} className="py-2 justify-center shadow-lg items-center rounded w-60 flex-none">+ Create a new list</button>)
-            :
-            (
-                <div className="relative border rounded w-60 flex-none p-2">
-                    <div className="flex justify-center">
-                        <AutoResizeTextarea taskName={listName} setTaskName={setListName} editFunction={() => { newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} setId={undefined} bold={false} />
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                        <button type = "button" onClick={(e) => {e.preventDefault(); newTaskList?.(listName); setCreateListPrompt(false); setListName(""); }} className=" border rounded p-2">Add List +</button>
-                        <button type = "button" onClick={(e) => { e.preventDefault(); setCreateListPrompt(false); setListName(""); }}><X /></button>
-                    </div>
+        !createListPrompt ? (
+            <button
+                type="button"
+                onClick={() => setCreateListPrompt(true)}
+                className="flex h-56 w-[18rem] flex-none flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-slate-300 bg-white/70 text-slate-500 transition hover:border-indigo-300 hover:bg-indigo-50/60 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:ring-offset-1"
+            >
+                <span className="text-3xl">+</span>
+                <span className="text-sm font-semibold uppercase tracking-widest">New list</span>
+                <span className="text-xs text-slate-400">Group related tasks together</span>
+            </button>
+        ) : (
+            <div className="relative flex h-56 w-[18rem] flex-none flex-col rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+                <div className="text-sm font-semibold text-slate-600">List name</div>
+                <div className="mt-2 flex-1">
+                    <AutoResizeTextarea
+                        taskName={listName}
+                        setTaskName={setListName}
+                        editFunction={() => {
+                            newTaskList?.(listName);
+                            setCreateListPrompt(false);
+                            setListName("");
+                        }}
+                        setId={undefined}
+                        bold={false}
+                    />
                 </div>
-            )
+                <div className="mt-4 flex items-center justify-between gap-2">
+                    <button
+                        type="button"
+                        onClick={(event) => {
+                            event.preventDefault();
+                            newTaskList?.(listName);
+                            setCreateListPrompt(false);
+                            setListName("");
+                        }}
+                        className="flex-1 rounded-2xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:ring-offset-1"
+                    >
+                        Add list
+                    </button>
+                    <button
+                        type="button"
+                        onClick={(event) => {
+                            event.preventDefault();
+                            setCreateListPrompt(false);
+                            setListName("");
+                        }}
+                        className="rounded-2xl border border-slate-200 p-2 text-slate-400 transition hover:border-slate-300 hover:text-slate-600"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+            </div>
+        )
 
     )
 }
@@ -163,29 +202,65 @@ export default function TaskListCard({ taskList, setTaskLists, editTaskId, setEd
 }) {
 
     return (
-        <DraggableTaskList className="rounded w-60 bg-gray-100 flex-none p-2 flex flex-col gap-2 z-10" setEditTaskListId={setEditTaskListId} setTaskLists={setTaskLists} boardId={boardId} taskLists={taskLists} element={taskList} draggingId={draggingId} setDraggingId={setDraggingId} editTaskListId={editTaskListId}>
-            <div className="flex flex-row justify-between items-center">
-                <EditTaskListName boardId={boardId!} taskList={taskList} editTaskListId={editTaskListId} setEditTaskListId={setEditTaskListId} setTaskLists={setTaskLists} />
-                <TaskListMenu taskList={taskList} boardId={boardId} setTaskLists={setTaskLists} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} />
-            </div>
-            {taskList.tasks && taskList.tasks.map((task: Task) => (
-                <div id={`task-${task.id}`} key={task.id}>
-                    <TaskCard
-                        task={task}
+        <DraggableTaskList
+            className="flex w-[18rem] flex-none flex-col gap-4 rounded-3xl border border-transparent bg-white/90 p-4 shadow-sm transition hover:border-indigo-200 hover:shadow-lg"
+            setEditTaskListId={setEditTaskListId}
+            setTaskLists={setTaskLists}
+            boardId={boardId}
+            taskLists={taskLists}
+            element={taskList}
+            draggingId={draggingId}
+            setDraggingId={setDraggingId}
+            editTaskListId={editTaskListId}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 flex-1 flex-col">
+                    <EditTaskListName
+                        boardId={boardId!}
                         taskList={taskList}
+                        editTaskListId={editTaskListId}
+                        setEditTaskListId={setEditTaskListId}
                         setTaskLists={setTaskLists}
-                        setEditTaskId={setEditTaskId}
-                        id={boardId}
-                        taskLists={taskLists}
-                        editTaskId={editTaskId}
-                        handleScheduleDelete={handleScheduleDelete}
-                        pendingDeletion={pendingDeletion}
                     />
+                    <p className="mt-1 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
+                        {taskList.tasks.length} {taskList.tasks.length === 1 ? "task" : "tasks"}
+                    </p>
                 </div>
-            )
-            )
-            }
-            <AddNewTask enterTaskListId={enterTaskListId} setEnterTaskListId={setEnterTaskListId} taskList={taskList} boardId={boardId} setTaskLists={setTaskLists} />
+                <TaskListMenu
+                    taskList={taskList}
+                    boardId={boardId}
+                    setTaskLists={setTaskLists}
+                    openMenuId={openMenuId}
+                    setOpenMenuId={setOpenMenuId}
+                />
+            </div>
+
+            <div className="flex flex-1 flex-col gap-3">
+                {taskList.tasks &&
+                    taskList.tasks.map((task: Task) => (
+                        <div id={`task-${task.id}`} key={task.id}>
+                            <TaskCard
+                                task={task}
+                                taskList={taskList}
+                                setTaskLists={setTaskLists}
+                                setEditTaskId={setEditTaskId}
+                                id={boardId}
+                                taskLists={taskLists}
+                                editTaskId={editTaskId}
+                                handleScheduleDelete={handleScheduleDelete}
+                                pendingDeletion={pendingDeletion}
+                            />
+                        </div>
+                    ))}
+            </div>
+
+            <AddNewTask
+                enterTaskListId={enterTaskListId}
+                setEnterTaskListId={setEnterTaskListId}
+                taskList={taskList}
+                boardId={boardId}
+                setTaskLists={setTaskLists}
+            />
         </DraggableTaskList>
     )
 }

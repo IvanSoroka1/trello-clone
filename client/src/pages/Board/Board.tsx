@@ -73,51 +73,65 @@ export default function Board() {
     };
 
     return (
-        <div>
+        <div className="relative min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-200 text-slate-900">
             <UndoButton
                 pendingDeletion={pendingDeletion}
                 undoTimer={undoTimer}
                 onUndo={handleUndoDelete}
                 taskName={pendingDeletion ? findTaskName(pendingDeletion.taskId, pendingDeletion.taskListId) : ''}
             />
-            <div className="flex justify-center items-center p-2 border-b">
-                {boardName}
-                <div className="absolute right-2">
-                    <ElipsesMenuButton id={parseInt(id!, 10)} />
-                </div>
-            </div>
+            <div className="mx-auto flex w-full max-w-8xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+                <header className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-transparent bg-white/90 px-6 py-5 shadow-sm backdrop-blur transition hover:border-indigo-200">
+                    <div className="flex min-w-0 flex-1 flex-col">
+                        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-400">
+                            Board
+                        </p>
+                        <h1 className="mt-1 truncate text-3xl font-semibold text-slate-800 sm:text-4xl">
+                            {boardName}
+                        </h1>
+                        <p className="mt-3 text-sm text-slate-500">
+                            Drag cards between lists, add new tasks, and keep your team aligned.
+                        </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                        <ElipsesMenuButton id={parseInt(id!, 10)} />
+                    </div>
+                </header>
 
-            {loading ?
-                    <div className="absolute inset-0 flex justify-center items-center text-4xl"> Loading... </div>
-                    :
-            <div className="overflow-x-auto whitespace-nowrap flex gap-2 px-2 mt-2 items-start h-screen">
-                {
-                    // some of the props that are being sent to TaskListCard are being used by the children of the TaskListCard but not the TaskListCard itself. Should I use a context to fix this?
-                    taskLists.map(
-                        (taskList: TaskList) => <TaskListCard
-                            key={taskList.id}
-                            taskList={taskList}
-                            setTaskLists={setTaskLists}
-                            editTaskId={editTaskId}
-                            setEditTaskId={setEditTaskId}
-                            BoardId={parseInt(id!, 10)}
-                            enterTaskListId={enterTaskListId}
-                            setEnterTaskListId={setEnterTaskListId}
-                            taskLists={taskLists}
-                            editTaskListId={editTaskListId}
-                            setEditTaskListId={setEditTaskListId}
-                            openMenuId={openMenuId}
-                            setOpenMenuId={setOpenMenuId}
-                            draggingId={draggingId}
-                            setDraggingId={setDraggingId}
-                            handleScheduleDelete={handleScheduleDelete}
-                            pendingDeletion={pendingDeletion}
-                        />
-                    )
-                }
-                <AddNewList boardId={parseInt(id!, 10)} setTaskLists={setTaskLists} />
+                {loading ? (
+                    <div className="mt-10 flex h-[60vh] items-center justify-center rounded-3xl border border-slate-200 bg-white/80 text-4xl text-slate-500 shadow-inner">
+                        Loading...
+                    </div>
+                ) : (
+                    <div className="mt-8 flex w-full gap-3 overflow-x-auto pb-6 items-start">
+                        {
+                            // some of the props that are being sent to TaskListCard are being used by the children of the TaskListCard but not the TaskListCard itself. Should I use a context to fix this?
+                            taskLists.map(
+                                (taskList: TaskList) => <TaskListCard
+                                    key={taskList.id}
+                                    taskList={taskList}
+                                    setTaskLists={setTaskLists}
+                                    editTaskId={editTaskId}
+                                    setEditTaskId={setEditTaskId}
+                                    BoardId={parseInt(id!, 10)}
+                                    enterTaskListId={enterTaskListId}
+                                    setEnterTaskListId={setEnterTaskListId}
+                                    taskLists={taskLists}
+                                    editTaskListId={editTaskListId}
+                                    setEditTaskListId={setEditTaskListId}
+                                    openMenuId={openMenuId}
+                                    setOpenMenuId={setOpenMenuId}
+                                    draggingId={draggingId}
+                                    setDraggingId={setDraggingId}
+                                    handleScheduleDelete={handleScheduleDelete}
+                                    pendingDeletion={pendingDeletion}
+                                />
+                            )
+                        }
+                        <AddNewList boardId={parseInt(id!, 10)} setTaskLists={setTaskLists} />
+                    </div>
+                )}
             </div>
-            }
         </div >
     )
 

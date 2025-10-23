@@ -208,13 +208,25 @@ function ToggleCheckIcon({ taskId, listId, boardId, completed }: { taskId: numbe
         } catch (e) {
             console.error("Error toggling task completion:", e);
         }
-    }
+    };
+
     return (
-        <div onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { checkTask(); e.stopPropagation(); }} className={`${isChecked ? 'text-green-500' : ''}`}>
-            {isChecked && <FaCheckCircle />}
-            {!isChecked && <FaRegCircle />}
-        </div>
-    )
+        <button
+            type="button"
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+                event.stopPropagation();
+                checkTask();
+            }}
+            className={`flex h-8 w-8 items-center justify-center rounded-full border transition ${
+                isChecked
+                    ? "border-green-200 bg-green-50 text-green-500 hover:border-green-300"
+                    : "border-slate-200 bg-white text-slate-400 hover:border-indigo-200 hover:text-indigo-400"
+            }`}
+        >
+            {isChecked ? <FaCheckCircle /> : <FaRegCircle />}
+        </button>
+    );
 }
 
 export function AddNewTask({ enterTaskListId, setEnterTaskListId, taskList, boardId, setTaskLists }: { enterTaskListId: number | null, setEnterTaskListId: React.Dispatch<React.SetStateAction<number | null>>, taskList: TaskList, boardId: number, setTaskLists: React.Dispatch<React.SetStateAction<TaskList[]>> }) {
@@ -222,15 +234,51 @@ export function AddNewTask({ enterTaskListId, setEnterTaskListId, taskList, boar
     const [taskName, setTaskName] = useState('');
     return (
         enterTaskListId !== taskList.id ?
-            <button onClick={() => { setEnterTaskListId(taskList.id); }} className="rounded p-2 text-left">
-                + Add a new task
+            <button
+                type="button"
+                onClick={() => {
+                    setEnterTaskListId(taskList.id);
+                }}
+                className="group flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white/70 px-3 py-2 text-sm font-medium text-slate-500 transition hover:border-indigo-300 hover:bg-indigo-50/60 hover:text-indigo-500"
+            >
+                <span className="text-lg leading-none">+</span>
+                <span>Add task</span>
             </button>
             :
-            <div className="mt-2">
-                <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={() => { newTask?.(taskList.id, taskName); setEnterTaskListId(null); setTaskName(""); }} setId={undefined} bold={false} />
-                <div className="flex gap-2 mt-2">
-                    <button onClick={() => { newTask?.(taskList.id, taskName); setEnterTaskListId(null); setTaskName(""); }} className="border rounded p-2">Add Task +</button>
-                    <button className="rounded" onClick={() => { setEnterTaskListId(null); setTaskName(""); }}><X></X></button>
+            <div className="mt-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm">
+                <AutoResizeTextarea
+                    taskName={taskName}
+                    setTaskName={setTaskName}
+                    editFunction={() => {
+                        newTask?.(taskList.id, taskName);
+                        setEnterTaskListId(null);
+                        setTaskName("");
+                    }}
+                    setId={undefined}
+                    bold={false}
+                />
+                <div className="mt-3 flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            newTask?.(taskList.id, taskName);
+                            setEnterTaskListId(null);
+                            setTaskName("");
+                        }}
+                        className="rounded-2xl bg-indigo-500 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:ring-offset-1"
+                    >
+                        Add task
+                    </button>
+                    <button
+                        type="button"
+                        className="rounded-2xl border border-slate-200 p-2 text-slate-400 transition hover:border-slate-300 hover:text-slate-600"
+                        onClick={() => {
+                            setEnterTaskListId(null);
+                            setTaskName("");
+                        }}
+                    >
+                        <X size={16} />
+                    </button>
                 </div>
             </div>
     )
@@ -253,20 +301,51 @@ export function TaskCard({ task, taskList, setTaskLists, setEditTaskId, id, task
     return (
         editTaskId === task.id ?
             (
-                <div>
-                    <div className="relative z-50">
-                        <AutoResizeTextarea taskName={taskName} setTaskName={setTaskName} editFunction={() => { editTaskName?.(task.id, taskName, taskList.id);  setEditTaskId(null); setTaskName(''); }} setId={undefined} bold={false} />
-                        <div className="flex gap-2 items-center">
-                            <FaCheck onClick={() => { editTaskName?.(task.id, taskName, taskList.id); setEditTaskId(null); setTaskName(''); }} className="text-green-500" /><X className="text-red-500" onClick={() => { setEditTaskId(null); setTaskName(''); }} />
-                        </div>
+                <div className="rounded-2xl border border-indigo-100 bg-white/90 p-4 shadow-sm">
+                    <AutoResizeTextarea
+                        taskName={taskName}
+                        setTaskName={setTaskName}
+                        editFunction={() => {
+                            editTaskName?.(task.id, taskName, taskList.id);
+                            setEditTaskId(null);
+                            setTaskName("");
+                        }}
+                        setId={undefined}
+                        bold={false}
+                    />
+                    <div className="mt-3 flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                editTaskName?.(task.id, taskName, taskList.id);
+                                setEditTaskId(null);
+                                setTaskName("");
+                            }}
+                            className="inline-flex items-center gap-2 rounded-full bg-green-500/90 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-200 focus:ring-offset-1"
+                        >
+                            <FaCheck size={14} />
+                            Save
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setEditTaskId(null);
+                                setTaskName("");
+                            }}
+                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+                        >
+                            <X size={14} />
+                            Cancel
+                        </button>
                     </div>
-                </div>)
+                </div>
+            )
             : (
                 <DraggableTask
-                    className={`relative flex justify-between items-center gap-1 rounded shadow-lg p-2 transition-all duration-200 ${
+                    className={`group relative flex items-start gap-3 rounded-3xl border border-transparent bg-white/90 p-4 shadow-sm transition hover:border-indigo-200 hover:shadow-lg ${
                         pendingDeletion && pendingDeletion.taskId === task.id
-                            ? 'bg-red-50 border-2 border-red-300'
-                            : 'bg-white hover:border-blue-500'
+                            ? "border-rose-200 bg-rose-50/80"
+                            : ""
                     }`}
                     setTaskLists={setTaskLists}
                     boardId={id}
@@ -274,18 +353,33 @@ export function TaskCard({ task, taskList, setTaskLists, setEditTaskId, id, task
                     task={task}
                     taskLists={taskLists}
                 >
-                    <div className={`flex items-center gap-2 flex-1 ${pendingDeletion && pendingDeletion.taskId === task.id ? 'opacity-50' : ''}`}>
-                        <ToggleCheckIcon completed={task.completed} taskId={task.id} listId={taskList.id} boardId={id}></ToggleCheckIcon>
-                        <div className="drag-handle-task whitespace-normal break-words w-5/6 ">
-                            {task.name}
+                    <div
+                        className={`flex flex-1 items-start gap-3 ${
+                            pendingDeletion && pendingDeletion.taskId === task.id ? "opacity-50" : ""
+                        }`}
+                    >
+                        <ToggleCheckIcon
+                            completed={task.completed}
+                            taskId={task.id}
+                            listId={taskList.id}
+                            boardId={id}
+                        ></ToggleCheckIcon>
+                        <div className="drag-handle-task min-w-0 flex-1">
+                            <p className="text-sm font-medium text-slate-700 break-normal wrap-anywhere">{task.name}</p>
+                            {task.completed && (
+                                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-green-400">
+                                    Completed
+                                </p>
+                            )}
                         </div>
                     </div>
-                    <div className="flex flex-col items-center gap-1">
+
+                    <div className="flex flex-col items-center gap-2 self-stretch">
                         {pendingDeletion && pendingDeletion.taskId === task.id && (
-                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                            <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
                         )}
-                        <FaRegTrashAlt
-                            size={12}
+                        <button
+                            type="button"
                             onClick={() => {
                                 if (handleScheduleDelete) {
                                     handleScheduleDelete?.(task.id, taskList.id, id);
@@ -293,18 +387,30 @@ export function TaskCard({ task, taskList, setTaskLists, setEditTaskId, id, task
                                     deleteTask?.(task.id, taskList.id);
                                 }
                             }}
-                            className={`hover:text-black ${pendingDeletion && pendingDeletion.taskId === task.id ? 'text-red-500' : 'text-gray-500'}`}
-                        ></FaRegTrashAlt>
-                        <FaEdit
-                            size={12}
+                            className={`flex h-8 w-8 items-center justify-center rounded-full border text-slate-400 transition hover:border-rose-200 hover:text-rose-500 ${
+                                pendingDeletion && pendingDeletion.taskId === task.id
+                                    ? "border-rose-200 bg-rose-50 text-rose-500"
+                                    : "border-slate-200 bg-white"
+                            }`}
+                        >
+                            <FaRegTrashAlt size={12} />
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => {
                                 if (!(pendingDeletion && pendingDeletion.taskId === task.id)) {
                                     setEditTaskId(task.id);
                                     setTaskName(task.name);
                                 }
                             }}
-                            className={`hover:text-black ${pendingDeletion && pendingDeletion.taskId === task.id ? 'opacity-50 cursor-not-allowed' : 'text-gray-500'}`}
-                        ></FaEdit>
+                            className={`flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition hover:border-indigo-200 hover:text-indigo-500 ${
+                                pendingDeletion && pendingDeletion.taskId === task.id
+                                    ? "cursor-not-allowed opacity-40"
+                                    : ""
+                            }`}
+                        >
+                            <FaEdit size={12} />
+                        </button>
                     </div>
                 </DraggableTask>
             )
