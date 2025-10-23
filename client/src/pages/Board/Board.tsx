@@ -8,6 +8,8 @@ import { AddNewList } from "./TaskList.tsx";
 import ElipsesMenuButton from "./ElipsesMenuButton.tsx";
 import { UndoButton } from "./UndoButton.tsx";
 import { useUndoDelete } from "./useUndoDelete.ts";
+import { useBoardTitleEditor } from "./useBoardTitleEditor.ts";
+import { AutoResizeTextarea } from "../../components/AutoResizeTextArea.tsx";
 
 function initBoard(id: string | undefined, navigate: any, setLoading: React.Dispatch<React.SetStateAction<boolean>>) {
     const [taskLists, setTaskLists] = useState<TaskList[]>([]);
@@ -55,7 +57,23 @@ export default function Board() {
     const { id } = useParams();
     const { taskLists, setTaskLists } = initBoard(id, navigate, setLoading);
     const location = useLocation();
-    const boardName = location.state?.boardName || "Board Name"; // but if you have a bookmark for the page, you're going to need to look in the database for the name of the board
+    const initialBoardTitle = location.state?.boardName || "Board Name"; // but if you have a bookmark for the page, you're going to need to look in the database for the name of the board
+    const {
+        displayedBoardTitle,
+        boardTitleDraft,
+        isEditingBoardTitle,
+        setIsEditingBoardTitle,
+        isSavingBoardTitle,
+        boardTitleError,
+        handleStartEditingBoardTitle,
+        handleRenameBoard,
+        handleBoardTitleDraftChange
+    } = useBoardTitleEditor({
+        initialTitle: initialBoardTitle,
+        boardId: id,
+        navigate,
+        location
+    });
     const [enterTaskListId, setEnterTaskListId] = useState<number | null>(null); // so that only one list can have a task added to it at a time
     const [editTaskId, setEditTaskId] = useState<number | null>(null); // so that only one task of any list can be edited at a time
     const [editTaskListId, setEditTaskListId] = useState<number | null>(null); // so that only one taskList can be edited at a time
@@ -86,9 +104,30 @@ export default function Board() {
                         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-400">
                             Board
                         </p>
-                        <h1 className="mt-1 truncate text-3xl font-semibold text-slate-800 sm:text-4xl">
-                            {boardName}
-                        </h1>
+                        <div className="mt-1 w-full text-left text-3xl font-semibold text-slate-800 sm:text-4xl">
+                            {isEditingBoardTitle ? (
+                                <AutoResizeTextarea<boolean>
+                                    taskName={boardTitleDraft}
+                                    setTaskName={handleBoardTitleDraftChange}
+                                    editFunction={handleRenameBoard}
+                                    setId={setIsEditingBoardTitle}
+                                    bold={true}
+                                />
+                            ) : (
+                                <div
+                                    onClick={handleStartEditingBoardTitle}
+                                    className="w-fit max-w-full truncate bg-transparent text-left text-inherit outline-none hover:bg-transparent focus:bg-transparent active:bg-transparent focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2"
+                                >
+                                    {displayedBoardTitle}
+                                </div>
+                            )}
+                        </div>
+                        {boardTitleError && (
+                            <p className="mt-2 text-sm text-red-500">{boardTitleError}</p>
+                        )}
+                        {isSavingBoardTitle && !boardTitleError && (
+                            <p className="mt-2 text-sm text-slate-400">Saving...</p>
+                        )}
                         <p className="mt-3 text-sm text-slate-500">
                             Drag cards between lists, add new tasks, and keep your team aligned.
                         </p>

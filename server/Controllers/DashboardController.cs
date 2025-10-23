@@ -37,6 +37,9 @@ public class DashboardController : ControllerBase
     [HttpPost("board")]
     public IActionResult MakeBoard([FromBody] BoardRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Title))
+            return BadRequest(new { message = "Title is required" });
+
         var email = User.FindFirst(ClaimTypes.Email)?.Value;
         if (email == null)
             return BadRequest(new { message = "Email not found" });
@@ -56,6 +59,26 @@ public class DashboardController : ControllerBase
         _context.SaveChanges();
 
         user.Boards.Add(board);
+
+        _context.SaveChanges();
+
+        return Ok(new { id = board.Id, title = board.Title });
+    }
+    
+    [HttpPut("board")]
+    public IActionResult RenameBoard([FromBody] BoardRenameRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Title))
+            return BadRequest(new { message = "Title is required" });
+
+        IQueryable<Board>? boardQuery = null;
+        string? message = _boardService.checkValidBoard(request.BoardId, ref boardQuery, User);
+
+        if (boardQuery == null || message != "Success!")
+            return BadRequest(new { message = message ?? "Board lookup failed" });
+
+        Board board = boardQuery.First();
+        board.Title = request.Title.Trim();
 
         _context.SaveChanges();
 
@@ -83,7 +106,13 @@ public class DashboardController : ControllerBase
 }
 
 public class BoardRequest {
-    public string Title { get; set; }
+    public string Title { get; set; } = string.Empty;
+}
+
+public class BoardRenameRequest
+{
+    public int BoardId { get; set; }
+    public string Title { get; set; } = string.Empty;
 }
 
 public class BoardDeletionRequest
